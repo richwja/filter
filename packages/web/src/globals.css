@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 12px;
+    --gap-sm: 8px;
+    --gap-md: 12px;
+    --gap-lg: 16px;
+    --gap-xl: 20px;
+    --gap-2xl: 24px;
+  }
+
+  * {
+    @apply border-surface-300;
+  }
+
+  body {
+    @apply bg-surface text-surface-900 tracking-body;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply tracking-heading;
+  }
+}
