@@ -28,7 +28,7 @@ services:
     routes:
       - type: proxy
         source: /api/*
-        destination: https://filter-api.onrender.com/api/*
+        destination: https://filter-api-wcmp.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html
