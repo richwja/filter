@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Save, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 interface PromptVersion {
   id: string;
@@ -18,10 +17,12 @@ function PromptSection({
   type,
   label,
   projectId,
+  token,
 }: {
   type: string;
   label: string;
   projectId: string;
+  token: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -30,7 +31,7 @@ function PromptSection({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/admin/prompts/${projectId}`)
+    fetch(`/api/admin/prompts/${projectId}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then(({ prompts }) => {
         const filtered = (prompts ?? []).filter((p: PromptVersion) => p.prompt_type === type);
@@ -44,7 +45,8 @@ function PromptSection({
     setSaving(true);
     await fetch(`/api/admin/prompts/${projectId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+
       body: JSON.stringify({ prompt_type: type, content }),
     });
     setSaving(false);
@@ -137,10 +139,7 @@ function PromptSection({
 }
 
 export function Prompts() {
-  const { currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { session, currentProject } = useOutletContext<AppContext>();
 
   if (!currentProject) return <p className="text-surface-600">Select a project first.</p>;
 
@@ -154,8 +153,14 @@ export function Prompts() {
           type="classify"
           label="Classification Prompt (Haiku)"
           projectId={currentProject.id}
+          token={session.access_token}
         />
-        <PromptSection type="rank" label="Ranking Prompt (Sonnet)" projectId={currentProject.id} />
+        <PromptSection
+          type="rank"
+          label="Ranking Prompt (Sonnet)"
+          projectId={currentProject.id}
+          token={session.access_token}
+        />
       </div>
     </div>
   );

@@ -7,13 +7,14 @@ const router = Router();
 router.use(requireAuth, adminOnly);
 
 router.get('/pipeline', async (req, res) => {
-  const { project_id, status, limit = '100' } = req.query;
+  const { project_id, status } = req.query;
+  const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
 
   let query = supabase
     .from('pipeline_logs')
     .select('*, emails(subject, from_address)')
     .order('created_at', { ascending: false })
-    .limit(Number(limit));
+    .limit(limit);
 
   if (project_id) query = query.eq('project_id', project_id);
   if (status) query = query.eq('status', status);
@@ -33,10 +34,19 @@ router.get('/prompts/:projectId', async (req, res) => {
   res.json({ prompts: data ?? [] });
 });
 
+const VALID_PROMPT_TYPES = ['classify', 'rank'];
+
 router.put('/prompts/:projectId', async (req, res) => {
   const { prompt_type, content } = req.body;
 
-  // Get next version number
+  if (!prompt_type || !VALID_PROMPT_TYPES.includes(prompt_type)) {
+    return res.status(400).json({ error: 'Invalid prompt_type. Must be "classify" or "rank".' });
+  }
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json({ error: 'Content is required' });
+  }
+
+  // Get next version + deactivate + insert in sequence (not atomic but validated)
   const { data: latest } = await supabase
     .from('prompt_versions')
     .select('version')
@@ -48,7 +58,6 @@ router.put('/prompts/:projectId', async (req, res) => {
 
   const nextVersion = (latest?.version ?? 0) + 1;
 
-  // Deactivate current active
   await supabase
     .from('prompt_versions')
     .update({ is_active: false })
@@ -56,7 +65,6 @@ router.put('/prompts/:projectId', async (req, res) => {
     .eq('prompt_type', prompt_type)
     .eq('is_active', true);
 
-  // Insert new version
   const { data, error } = await supabase
     .from('prompt_versions')
     .insert({

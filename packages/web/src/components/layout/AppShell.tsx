@@ -5,8 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProject } from '@/hooks/useProject';
 
 export function AppShell() {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { projects, currentProject, switchProject, loading: projectsLoading } = useProject();
+  const { user, session, loading: authLoading, signOut } = useAuth();
+  const { projects, currentProject, switchProject, loading: projectsLoading } = useProject(session);
 
   if (authLoading || projectsLoading) {
     return (
@@ -31,7 +31,7 @@ export function AppShell() {
       />
       <main className="pt-14">
         <div className="p-6">
-          <Outlet context={{ user, currentProject }} />
+          <Outlet context={{ user, session, currentProject }} />
         </div>
       </main>
     </div>

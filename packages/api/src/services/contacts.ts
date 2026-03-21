@@ -7,27 +7,20 @@ export async function autoDiscoverContact(
   fromName: string | null,
   classification: ClassificationResult,
 ) {
-  // Check if contact already exists
-  const { data: existing } = await supabase
-    .from('media_contacts')
-    .select('id')
-    .eq('project_id', projectId)
-    .eq('email', fromAddress)
-    .maybeSingle();
-
-  if (existing) return;
-
-  // Auto-discover new contact from classified email
-  await supabase.from('media_contacts').insert({
-    project_id: projectId,
-    name: classification.extracted_contact.name || fromName,
-    email: fromAddress,
-    phone: classification.extracted_contact.phone,
-    mobile: classification.extracted_contact.mobile,
-    title: classification.extracted_contact.title,
-    outlet: classification.outlet_name,
-    beat: classification.beat_topics[0] || null,
-    relationship_status: 'new',
-    source: 'auto_discovered',
-  });
+  // Upsert to avoid TOCTOU race condition
+  await supabase.from('media_contacts').upsert(
+    {
+      project_id: projectId,
+      name: classification.extracted_contact.name || fromName,
+      email: fromAddress,
+      phone: classification.extracted_contact.phone,
+      mobile: classification.extracted_contact.mobile,
+      title: classification.extracted_contact.title,
+      outlet: classification.outlet_name,
+      beat: classification.beat_topics[0] || null,
+      relationship_status: 'new',
+      source: 'auto_discovered',
+    },
+    { onConflict: 'project_id,email', ignoreDuplicates: true },
+  );
 }

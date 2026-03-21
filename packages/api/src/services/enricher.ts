@@ -17,7 +17,6 @@ export async function enrichEmail(
   classification: ClassificationResult,
   fromAddress: string,
 ): Promise<ContextPacket> {
-  // Run independent lookups in parallel
   const [contactResult, releasesResult, samplesResult, projectResult] = await Promise.all([
     supabase
       .from('media_contacts')
@@ -31,13 +30,15 @@ export async function enrichEmail(
       .select('id, title, summary, topics, spokesperson, published_at')
       .eq('project_id', projectId)
       .eq('status', 'published')
-      .overlaps(
-        'topics',
-        classification.beat_topics.length ? classification.beat_topics : ['__none__'],
-      )
+      .order('published_at', { ascending: false })
       .limit(5),
 
-    supabase.from('writing_samples').select('*').eq('project_id', projectId).limit(3),
+    supabase
+      .from('writing_samples')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(3),
 
     supabase
       .from('projects')
@@ -46,7 +47,7 @@ export async function enrichEmail(
       .single(),
   ]);
 
-  // Interaction history requires the contact ID — sequential
+  // Interaction history requires contact ID — sequential
   let recentInteractions: Record<string, unknown>[] = [];
   if (contactResult.data?.id) {
     const { data } = await supabase

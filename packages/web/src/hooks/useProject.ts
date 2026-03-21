@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from './useAuth';
+import type { Session } from '@supabase/supabase-js';
 
 export interface Project {
   id: string;
@@ -13,8 +13,7 @@ export interface Project {
 
 const STORAGE_KEY = 'filter_current_project';
 
-export function useProject() {
-  const { session } = useAuth();
+export function useProject(session?: Session | null) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,13 +27,17 @@ export function useProject() {
     fetch('/api/projects', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then(({ projects: list }) => {
         setProjects(list ?? []);
         const savedId = localStorage.getItem(STORAGE_KEY);
         const saved = list?.find((p: Project) => p.id === savedId);
         setCurrentProject(saved ?? list?.[0] ?? null);
       })
+      .catch((err) => console.error('Failed to load projects:', err))
       .finally(() => setLoading(false));
   }, [session]);
 

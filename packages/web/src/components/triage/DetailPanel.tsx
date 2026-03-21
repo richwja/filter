@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X, Mail, Building2, User, Star } from 'lucide-react';
 import { ScoreBadge } from './ScoreBadge';
 import { FlagChips } from './FlagChips';
@@ -10,18 +11,17 @@ interface DetailPanelProps {
 }
 
 export function DetailPanel({ row, onClose }: DetailPanelProps) {
+  const [status, setStatus] = useState(row?.status || 'new');
+
   if (!row) return null;
 
   const email = row.emails;
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
 
-      {/* Panel */}
       <div className="fixed right-0 top-0 z-50 h-full w-[520px] overflow-y-auto border-l border-surface-300 bg-surface-50 shadow-2xl">
-        {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-surface-300 bg-surface-50 px-5 py-4">
           <h2 className="text-lg font-semibold text-surface-950 tracking-heading truncate pr-4">
             {email?.subject || 'Email details'}
@@ -35,7 +35,6 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
         </div>
 
         <div className="space-y-6 p-5">
-          {/* Sender profile */}
           <section className="space-y-2">
             <h3 className="text-sm font-medium text-surface-600">Sender</h3>
             <div className="rounded-xl border border-surface-300 bg-surface p-4 space-y-2">
@@ -58,7 +57,6 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
             </div>
           </section>
 
-          {/* Email body */}
           <section className="space-y-2">
             <h3 className="text-sm font-medium text-surface-600">Email</h3>
             <div className="rounded-xl border border-surface-300 bg-surface p-4">
@@ -68,7 +66,6 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
             </div>
           </section>
 
-          {/* AI Analysis */}
           <section className="space-y-2">
             <h3 className="text-sm font-medium text-surface-600">AI Analysis</h3>
             <div className="rounded-xl border border-surface-300 bg-surface p-4 space-y-3">
@@ -102,13 +99,12 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
             </div>
           </section>
 
-          {/* Talking points */}
           {(row.talking_points?.length ?? 0) > 0 && (
             <section className="space-y-2">
               <h3 className="text-sm font-medium text-surface-600">Talking points</h3>
               <ul className="space-y-1.5 rounded-xl border border-surface-300 bg-surface p-4">
                 {row.talking_points?.map((point, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-surface-800">
+                  <li key={`${row.id}-tp-${i}`} className="flex gap-2 text-sm text-surface-800">
                     <Star className="mt-0.5 h-3 w-3 shrink-0 text-pink-500" />
                     {point}
                   </li>
@@ -117,10 +113,10 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
             </section>
           )}
 
-          {/* Draft reply */}
           {row.draft_reply_body && (
             <section className="space-y-2">
               <DraftReplyEditor
+                key={row.id}
                 subject={row.draft_reply_subject || `Re: ${email?.subject || ''}`}
                 body={row.draft_reply_body}
                 tone={row.draft_reply_tone || undefined}
@@ -130,14 +126,17 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
             </section>
           )}
 
-          {/* Status + Assignment */}
           <section className="space-y-3 pb-6">
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="mb-1 block text-xs text-surface-500">Status</label>
-                <select className="w-full rounded-md border border-surface-300 bg-surface px-3 py-2 text-sm text-surface-800">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full rounded-md border border-surface-300 bg-surface px-3 py-2 text-sm text-surface-800"
+                >
                   {['new', 'in_progress', 'replied', 'closed', 'no_action'].map((s) => (
-                    <option key={s} value={s} selected={s === row.status}>
+                    <option key={s} value={s}>
                       {s.replace(/_/g, ' ')}
                     </option>
                   ))}

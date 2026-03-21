@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { supabase } from '../db/supabase';
-import { requireAuth } from '../middleware/auth';
 
 const router = Router({ mergeParams: true });
-router.use(requireAuth);
+
+function pid(req: { params: Record<string, string> }) {
+  return (req.params as { projectId: string }).projectId;
+}
 
 function getDateRange(range: string): string {
   const days = range === '7d' ? 7 : range === '90d' ? 90 : 30;
@@ -18,10 +20,9 @@ router.get('/sentiment', async (req, res) => {
   const { data } = await supabase
     .from('triage_results')
     .select('sentiment, created_at')
-    .eq('project_id', (req.params as { projectId: string }).projectId)
+    .eq('project_id', pid(req))
     .gte('created_at', since);
 
-  // Group by date and sentiment
   const grouped: Record<string, Record<string, number>> = {};
   for (const row of data ?? []) {
     const date = row.created_at.slice(0, 10);
@@ -42,7 +43,7 @@ router.get('/topics', async (req, res) => {
   const { data } = await supabase
     .from('triage_results')
     .select('beat_topics, created_at')
-    .eq('project_id', (req.params as { projectId: string }).projectId)
+    .eq('project_id', pid(req))
     .gte('created_at', since);
 
   const topicCounts: Record<string, number> = {};
@@ -66,7 +67,7 @@ router.get('/volume', async (req, res) => {
   const { data } = await supabase
     .from('triage_results')
     .select('category, created_at')
-    .eq('project_id', (req.params as { projectId: string }).projectId)
+    .eq('project_id', pid(req))
     .gte('created_at', since);
 
   const grouped: Record<string, Record<string, number>> = {};
@@ -88,17 +89,16 @@ router.get('/scores', async (req, res) => {
   const { data } = await supabase
     .from('triage_results')
     .select('composite_score')
-    .eq('project_id', (req.params as { projectId: string }).projectId)
+    .eq('project_id', pid(req))
     .not('composite_score', 'is', null);
 
-  // Build histogram buckets 0-1, 1-2, ..., 9-10
   const buckets = Array.from({ length: 10 }, (_, i) => ({
     range: `${i}-${i + 1}`,
     count: 0,
   }));
 
   for (const row of data ?? []) {
-    const idx = Math.min(Math.floor(row.composite_score), 9);
+    const idx = Math.max(0, Math.min(Math.floor(row.composite_score), 9));
     buckets[idx].count++;
   }
 

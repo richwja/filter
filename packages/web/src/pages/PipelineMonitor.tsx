@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 interface PipelineLog {
   id: string;
@@ -24,20 +23,19 @@ const stepColors: Record<string, string> = {
 };
 
 export function PipelineMonitor() {
-  const { currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { session, currentProject } = useOutletContext<AppContext>();
   const [logs, setLogs] = useState<PipelineLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = useCallback(() => {
     const params = currentProject ? `?project_id=${currentProject.id}` : '';
-    fetch(`/api/admin/pipeline${params}`)
+    fetch(`/api/admin/pipeline${params}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(({ logs: l }) => setLogs(l ?? []))
       .finally(() => setLoading(false));
-  }, [currentProject]);
+  }, [currentProject, session]);
 
   useEffect(() => {
     fetchLogs();

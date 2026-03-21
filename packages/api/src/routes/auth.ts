@@ -12,18 +12,25 @@ router.post('/callback', async (req, res) => {
 
   const {
     data: { user },
-    error,
+    error: authError,
   } = await supabase.auth.getUser(access_token);
-  if (error || !user) {
+  if (authError || !user) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  // Upsert user profile
-  const { data: profile } = await supabase
+  if (!user.email) {
+    return res.status(400).json({ error: 'User has no email address' });
+  }
+
+  const { data: profile, error: upsertError } = await supabase
     .from('users')
-    .upsert({ id: user.id, email: user.email! }, { onConflict: 'id' })
+    .upsert({ id: user.id, email: user.email }, { onConflict: 'id' })
     .select()
     .single();
+
+  if (upsertError || !profile) {
+    return res.status(500).json({ error: 'Failed to create user profile' });
+  }
 
   res.json({ user: profile });
 });

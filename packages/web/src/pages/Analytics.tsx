@@ -14,8 +14,7 @@ import {
 } from 'recharts';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 const SENTIMENT_COLORS = {
   positive: '#0f766e',
@@ -26,10 +25,7 @@ const SENTIMENT_COLORS = {
 const RANGES = ['7d', '30d', '90d'] as const;
 
 export function Analytics() {
-  const { currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { session, currentProject } = useOutletContext<AppContext>();
   const [range, setRange] = useState<string>('30d');
   const [sentiment, setSentiment] = useState<Record<string, unknown>[]>([]);
   const [topics, setTopics] = useState<{ topic: string; count: number }[]>([]);
@@ -38,23 +34,26 @@ export function Analytics() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentProject) return;
+    if (!currentProject || !session) return;
     setLoading(true);
     const base = `/api/projects/${currentProject.id}/analytics`;
+    const headers = { Authorization: `Bearer ${session.access_token}` };
 
     Promise.all([
-      fetch(`${base}/sentiment?range=${range}`).then((r) => r.json()),
-      fetch(`${base}/topics?range=${range}`).then((r) => r.json()),
-      fetch(`${base}/volume?range=${range}`).then((r) => r.json()),
-      fetch(`${base}/scores`).then((r) => r.json()),
-    ]).then(([s, t, v, sc]) => {
-      setSentiment(s.data ?? []);
-      setTopics(t.data ?? []);
-      setVolume(v.data ?? []);
-      setScores(sc.data ?? []);
-      setLoading(false);
-    });
-  }, [currentProject, range]);
+      fetch(`${base}/sentiment?range=${range}`, { headers }).then((r) => r.json()),
+      fetch(`${base}/topics?range=${range}`, { headers }).then((r) => r.json()),
+      fetch(`${base}/volume?range=${range}`, { headers }).then((r) => r.json()),
+      fetch(`${base}/scores`, { headers }).then((r) => r.json()),
+    ])
+      .then(([s, t, v, sc]) => {
+        setSentiment(s.data ?? []);
+        setTopics(t.data ?? []);
+        setVolume(v.data ?? []);
+        setScores(sc.data ?? []);
+      })
+      .catch((err) => console.error('Analytics fetch error:', err))
+      .finally(() => setLoading(false));
+  }, [currentProject, session, range]);
 
   if (loading) {
     return (
@@ -87,7 +86,6 @@ export function Analytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Sentiment trend */}
         <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
           <h2 className="mb-4 text-sm font-medium text-surface-600">Sentiment trend</h2>
           <ResponsiveContainer width="100%" height={280}>
@@ -104,12 +102,7 @@ export function Analytics() {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar
-                dataKey="positive"
-                stackId="a"
-                fill={SENTIMENT_COLORS.positive}
-                radius={[0, 0, 0, 0]}
-              />
+              <Bar dataKey="positive" stackId="a" fill={SENTIMENT_COLORS.positive} />
               <Bar dataKey="neutral" stackId="a" fill={SENTIMENT_COLORS.neutral} />
               <Bar
                 dataKey="negative"
@@ -121,7 +114,6 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* Topic frequency */}
         <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
           <h2 className="mb-4 text-sm font-medium text-surface-600">Top topics</h2>
           <ResponsiveContainer width="100%" height={280}>
@@ -147,7 +139,6 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* Volume over time */}
         <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
           <h2 className="mb-4 text-sm font-medium text-surface-600">Email volume</h2>
           <ResponsiveContainer width="100%" height={280}>
@@ -188,7 +179,6 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* Score distribution */}
         <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
           <h2 className="mb-4 text-sm font-medium text-surface-600">Score distribution</h2>
           <ResponsiveContainer width="100%" height={280}>

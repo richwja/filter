@@ -3,14 +3,10 @@ import { useOutletContext } from 'react-router-dom';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Save, Plus, FileText, PenLine, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 export function CompanyContext() {
-  const { currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { session, currentProject } = useOutletContext<AppContext>();
   const [tab, setTab] = useState('briefing');
   const [briefing, setBriefing] = useState('');
   const [saving, setSaving] = useState(false);
@@ -24,25 +20,35 @@ export function CompanyContext() {
   useEffect(() => {
     if (!currentProject) return;
 
-    fetch(`/api/projects/${currentProject.id}`)
+    fetch(`/api/projects/${currentProject.id}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(({ project }) => setBriefing(project?.client_context || ''));
 
-    fetch(`/api/projects/${currentProject.id}/press-releases`)
+    fetch(`/api/projects/${currentProject.id}/press-releases`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(({ press_releases }) => setPressReleases(press_releases ?? []));
 
-    fetch(`/api/projects/${currentProject.id}/writing-samples`)
+    fetch(`/api/projects/${currentProject.id}/writing-samples`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(({ writing_samples }) => setSamples(writing_samples ?? []));
-  }, [currentProject]);
+  }, [currentProject, session]);
 
   async function saveBriefing() {
     if (!currentProject) return;
     setSaving(true);
     await fetch(`/api/projects/${currentProject.id}/client-context`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+
       body: JSON.stringify({ client_context: briefing }),
     });
     setSaving(false);

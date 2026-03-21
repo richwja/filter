@@ -104,7 +104,7 @@ filter/
 │
 ├── supabase/
 │   └── migrations/
-│       ├── 001_initial_schema.sql    # 17 tables, indexes
+│       ├── 001_initial_schema.sql    # 15 tables, indexes
 │       └── 002_rls_policies.sql      # RLS + helper functions
 │
 ├── .github/workflows/

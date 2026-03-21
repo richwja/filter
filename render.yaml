@@ -26,6 +26,9 @@ services:
     buildCommand: npm ci && npm run build:web
     staticPublishPath: packages/web/dist
     routes:
+      - type: proxy
+        source: /api/*
+        destination: https://filter-api.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html

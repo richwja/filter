@@ -2,16 +2,12 @@ import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 const STEPS = ['Project', 'Media List', 'Company Context', 'Team', 'Review'];
 
 export function Setup() {
-  const { currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { currentProject } = useOutletContext<AppContext>();
   const [step, setStep] = useState(0);
   const [saving] = useState(false);
 

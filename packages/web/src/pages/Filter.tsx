@@ -7,8 +7,7 @@ import { useTriageRealtime, type TriageRow } from '@/hooks/useTriageRealtime';
 import { TriageTable } from '@/components/triage/TriageTable';
 import { DetailPanel } from '@/components/triage/DetailPanel';
 import { ExportButton } from '@/components/shared/ExportButton';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 type ViewTab =
   | 'queue'
@@ -30,22 +29,16 @@ const viewTabs: { value: ViewTab; label: string }[] = [
 ];
 
 export function Filter() {
-  const { user, currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { user, currentProject } = useOutletContext<AppContext>();
   const { results, loading } = useTriageRealtime(currentProject?.id);
   const [selectedRow, setSelectedRow] = useState<TriageRow | null>(null);
   const [activeTab, setActiveTab] = useState<ViewTab>('queue');
-
-  // Filter bar state
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
   const filtered = useMemo(() => {
     let rows = results;
 
-    // View tab filters
     switch (activeTab) {
       case 'queue':
         rows = rows.filter((r) => r.status === 'new');
@@ -67,24 +60,27 @@ export function Filter() {
         break;
     }
 
-    // Additional filters
     if (statusFilter) rows = rows.filter((r) => r.status === statusFilter);
     if (categoryFilter) rows = rows.filter((r) => r.category === categoryFilter);
 
     return rows;
   }, [results, activeTab, statusFilter, categoryFilter, user?.id]);
 
-  const exportData = filtered.map((r) => ({
-    score: r.composite_score ?? '',
-    from: r.emails?.from_name || r.emails?.from_address || '',
-    outlet: r.outlet_name || '',
-    subject: r.emails?.subject || '',
-    category: r.category || '',
-    status: r.status || '',
-    flags: (r.flags ?? []).join(', '),
-    action: r.recommended_action || '',
-    received: r.emails?.received_at || '',
-  }));
+  const exportData = useMemo(
+    () =>
+      filtered.map((r) => ({
+        score: r.composite_score ?? '',
+        from: r.emails?.from_name || r.emails?.from_address || '',
+        outlet: r.outlet_name || '',
+        subject: r.emails?.subject || '',
+        category: r.category || '',
+        status: r.status || '',
+        flags: (r.flags ?? []).join(', '),
+        action: r.recommended_action || '',
+        received: r.emails?.received_at || '',
+      })),
+    [filtered],
+  );
 
   if (loading) {
     return (
@@ -114,11 +110,9 @@ export function Filter() {
               </Tabs.Trigger>
             ))}
           </Tabs.List>
-
           <ExportButton data={exportData} filename={`filter-${currentProject?.slug || 'export'}`} />
         </div>
 
-        {/* Filter bar */}
         <div className="mb-4 flex gap-3">
           <select
             value={statusFilter}
@@ -132,7 +126,6 @@ export function Filter() {
               </option>
             ))}
           </select>
-
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -157,7 +150,6 @@ export function Filter() {
 
         <TriageTable data={filtered} onRowClick={setSelectedRow} />
       </Tabs.Root>
-
       <DetailPanel row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   );

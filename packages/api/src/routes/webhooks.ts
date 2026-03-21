@@ -6,14 +6,24 @@ import { processEmail } from '../pipeline/processor';
 const router = Router();
 
 function verifyMailgunSignature(timestamp: string, token: string, signature: string): boolean {
-  const signingKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY!;
+  if (!timestamp || !token || !signature) return false;
+  const signingKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY;
+  if (!signingKey) return false;
+
   const hmac = crypto.createHmac('sha256', signingKey);
   hmac.update(timestamp + token);
-  return hmac.digest('hex') === signature;
+  const digest = hmac.digest('hex');
+
+  // Constant-time comparison to prevent timing attacks
+  try {
+    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
+  } catch {
+    return false;
+  }
 }
 
 router.post('/mailgun/inbound', async (req: Request, res: Response) => {
-  const { timestamp, token, signature } = req.body;
+  const { timestamp, token, signature } = req.body ?? {};
   if (!verifyMailgunSignature(timestamp, token, signature)) {
     return res.status(403).json({ error: 'Invalid signature' });
   }
@@ -67,6 +77,10 @@ router.post('/mailgun/inbound', async (req: Request, res: Response) => {
     .single();
 
   if (error) {
+    // Duplicate message_id = already processed, return 200
+    if (error.code === '23505') {
+      return res.status(200).json({ message: 'Already processed' });
+    }
     console.error('Failed to store email:', error.message);
     return res.status(500).json({ error: 'Failed to store email' });
   }

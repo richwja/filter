@@ -5,6 +5,21 @@ import { requireAuth } from '../middleware/auth';
 const router = Router();
 router.use(requireAuth);
 
+async function isProjectMember(
+  userId: string,
+  projectId: string,
+  isAdmin: boolean,
+): Promise<boolean> {
+  if (isAdmin) return true;
+  const { data } = await supabase
+    .from('project_members')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  return !!data;
+}
+
 router.get('/', async (req, res) => {
   const { data: memberships } = await supabase
     .from('project_members')
@@ -25,13 +40,14 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { name, slug, receiving_address } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
 
   const { data: project, error } = await supabase
     .from('projects')
     .insert({
       org_id: req.user!.org_id,
       name,
-      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+      slug: slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       receiving_address,
     })
     .select()
@@ -49,6 +65,10 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  if (!(await isProjectMember(req.user!.id, req.params.id, req.user!.role === 'admin'))) {
+    return res.status(403).json({ error: 'Not a member of this project' });
+  }
+
   const { data } = await supabase.from('projects').select('*').eq('id', req.params.id).single();
 
   if (!data) return res.status(404).json({ error: 'Project not found' });
@@ -56,6 +76,10 @@ router.get('/:id', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
+  if (!(await isProjectMember(req.user!.id, req.params.id, req.user!.role === 'admin'))) {
+    return res.status(403).json({ error: 'Not a member of this project' });
+  }
+
   const allowed = [
     'name',
     'status',

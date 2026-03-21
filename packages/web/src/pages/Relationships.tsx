@@ -12,8 +12,7 @@ import { Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { ColumnToggle } from '@/components/shared/ColumnToggle';
-import type { Project } from '@/hooks/useProject';
-import type { UserProfile } from '@/hooks/useAuth';
+import type { AppContext } from '@/lib/types';
 
 interface Contact {
   id: string;
@@ -109,21 +108,20 @@ const columns = [
 ];
 
 export function Relationships() {
-  const { currentProject } = useOutletContext<{
-    user: UserProfile;
-    currentProject: Project | null;
-  }>();
+  const { session, currentProject } = useOutletContext<AppContext>();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([]);
 
   useEffect(() => {
     if (!currentProject) return;
-    fetch(`/api/projects/${currentProject.id}/contacts`)
+    fetch(`/api/projects/${currentProject.id}/contacts`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(({ contacts: c }) => setContacts(c ?? []))
       .finally(() => setLoading(false));
-  }, [currentProject]);
+  }, [currentProject, session]);
 
   const table = useReactTable({
     data: contacts,

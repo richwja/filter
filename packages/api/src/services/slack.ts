@@ -7,18 +7,31 @@ interface SlackBlock {
 
 const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN;
 
-async function slackApi(method: string, body: Record<string, unknown>): Promise<unknown> {
-  const res = await fetch(`https://slack.com/api/${method}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SLACK_TOKEN}`,
-    },
-    body: JSON.stringify(body),
-  });
-  const data = (await res.json()) as { ok: boolean; error?: string };
-  if (!data.ok) console.error(`Slack ${method} error:`, data.error);
-  return data;
+async function slackApi(
+  method: string,
+  body: Record<string, unknown>,
+): Promise<{ ok: boolean; error?: string; channel?: { id: string } }> {
+  if (!SLACK_TOKEN) {
+    console.warn('SLACK_BOT_TOKEN not configured, skipping Slack API call');
+    return { ok: false, error: 'not_configured' };
+  }
+
+  try {
+    const res = await fetch(`https://slack.com/api/${method}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SLACK_TOKEN}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string; channel?: { id: string } };
+    if (!data.ok) console.error(`Slack ${method} error:`, data.error);
+    return data;
+  } catch (err) {
+    console.error(`Slack ${method} network error:`, err);
+    return { ok: false, error: 'network_error' };
+  }
 }
 
 export async function postToChannel(channelId: string, blocks: SlackBlock[]) {
@@ -26,11 +39,8 @@ export async function postToChannel(channelId: string, blocks: SlackBlock[]) {
 }
 
 export async function sendDM(slackUserId: string, blocks: SlackBlock[]) {
-  // Open DM channel first
-  const conv = (await slackApi('conversations.open', { users: slackUserId })) as {
-    channel?: { id: string };
-  };
-  if (!conv.channel?.id) return;
+  const conv = await slackApi('conversations.open', { users: slackUserId });
+  if (!conv.ok || !conv.channel?.id) return;
   return slackApi('chat.postMessage', { channel: conv.channel.id, blocks });
 }
 
@@ -53,7 +63,7 @@ export function buildTriageNotification(
   return [
     {
       type: 'header',
-      text: { type: 'plain_text', text: `📬 New email — Score ${score}`, emoji: true },
+      text: { type: 'plain_text', text: `New email — Score ${score}`, emoji: true },
     },
     {
       type: 'section',
@@ -71,10 +81,6 @@ export function buildTriageNotification(
     {
       type: 'section',
       text: { type: 'mrkdwn', text: `*Action:* ${triage.recommended_action.replace(/_/g, ' ')}` },
-    },
-    {
-      type: 'context',
-      elements: [{ type: 'mrkdwn', text: 'View in Filter dashboard →' }],
     },
   ];
 }

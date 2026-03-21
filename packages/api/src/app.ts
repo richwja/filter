@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 
+import { requireAuth } from './middleware/auth';
+import { requireProjectAccess } from './middleware/projectAccess';
 import webhookRoutes from './routes/webhooks';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -38,10 +40,10 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/projects/:projectId/triage', triageRoutes);
-app.use('/api/projects/:projectId/contacts', contactRoutes);
-app.use('/api/projects/:projectId', contentRoutes);
-app.use('/api/projects/:projectId/analytics', analyticsRoutes);
+app.use('/api/projects/:projectId/triage', requireAuth, requireProjectAccess, triageRoutes);
+app.use('/api/projects/:projectId/contacts', requireAuth, requireProjectAccess, contactRoutes);
+app.use('/api/projects/:projectId', requireAuth, requireProjectAccess, contentRoutes);
+app.use('/api/projects/:projectId/analytics', requireAuth, requireProjectAccess, analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // 404

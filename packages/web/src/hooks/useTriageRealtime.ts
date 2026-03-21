@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export interface TriageRow {
@@ -18,8 +18,6 @@ export interface TriageRow {
   flags: string[];
   status: string;
   assigned_to: string | null;
-  created_at: string;
-  updated_at: string;
   reasoning?: string;
   talking_points?: string[];
   draft_reply_subject?: string;
@@ -27,8 +25,9 @@ export interface TriageRow {
   draft_reply_tone?: string;
   draft_reply_requires_approval?: boolean;
   draft_reply_approval_reason?: string;
+  created_at: string;
+  updated_at: string;
   is_new?: boolean;
-  // Joined email fields
   emails?: {
     subject: string;
     from_name: string | null;
@@ -40,6 +39,7 @@ export interface TriageRow {
 export function useTriageRealtime(projectId: string | undefined) {
   const [results, setResults] = useState<TriageRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   const fetchInitial = useCallback(async () => {
     if (!projectId) return;
@@ -82,12 +82,14 @@ export function useTriageRealtime(projectId: string | undefined) {
 
           if (data) {
             setResults((prev) => [{ ...data, is_new: true }, ...prev]);
-            // Clear highlight after 5s
-            setTimeout(() => {
+
+            const timer = setTimeout(() => {
               setResults((prev) =>
                 prev.map((r) => (r.id === data.id ? { ...r, is_new: false } : r)),
               );
+              timersRef.current.delete(timer);
             }, 5000);
+            timersRef.current.add(timer);
           }
         },
       )
@@ -100,8 +102,11 @@ export function useTriageRealtime(projectId: string | undefined) {
           filter: `project_id=eq.${projectId}`,
         },
         (payload) => {
+          // Merge update but preserve the joined emails data
           setResults((prev) =>
-            prev.map((r) => (r.id === payload.new.id ? { ...r, ...payload.new } : r)),
+            prev.map((r) =>
+              r.id === payload.new.id ? { ...r, ...payload.new, emails: r.emails } : r,
+            ),
           );
         },
       )
@@ -109,6 +114,9 @@ export function useTriageRealtime(projectId: string | undefined) {
 
     return () => {
       supabase.removeChannel(channel);
+      // Clear all highlight timers
+      for (const timer of timersRef.current) clearTimeout(timer);
+      timersRef.current.clear();
     };
   }, [projectId]);
 

@@ -15,36 +15,50 @@ async function logStep(
   startTime: number,
   error?: string,
 ) {
-  await supabase.from('pipeline_logs').insert({
-    project_id: projectId,
-    email_id: emailId,
-    step,
-    status,
-    duration_ms: Date.now() - startTime,
-    error_message: error,
-  });
+  try {
+    await supabase.from('pipeline_logs').insert({
+      project_id: projectId,
+      email_id: emailId,
+      step,
+      status,
+      duration_ms: Date.now() - startTime,
+      error_message: error,
+    });
+  } catch {
+    console.error(`Failed to log pipeline step ${step}/${status} for email ${emailId}`);
+  }
 }
 
 export async function processEmail(emailId: string, projectId: string): Promise<void> {
   const pipelineStart = Date.now();
 
-  // Mark processing started
-  await supabase
+  // C9: Idempotency guard — claim the email atomically
+  const { data: claimed, error: claimError } = await supabase
     .from('emails')
     .update({ processing_started_at: new Date().toISOString() })
-    .eq('id', emailId);
+    .eq('id', emailId)
+    .is('processing_started_at', null)
+    .select('id')
+    .single();
+
+  if (claimError || !claimed) {
+    console.log(`Email ${emailId} already being processed, skipping`);
+    return;
+  }
 
   // Fetch email
   const { data: email } = await supabase.from('emails').select('*').eq('id', emailId).single();
 
   if (!email) throw new Error(`Email ${emailId} not found`);
 
-  // Fetch project config for sensitive topics
+  // Fetch project config
   const { data: project } = await supabase
     .from('projects')
     .select('sensitive_topics, notification_threshold, slack_channel_id, auto_assign_rules')
     .eq('id', projectId)
     .single();
+
+  if (!project) throw new Error(`Project ${projectId} not found`);
 
   // Step 1: Classify
   let classification: ClassificationResult;
@@ -58,11 +72,11 @@ export async function processEmail(emailId: string, projectId: string): Promise<
       email.body_text,
       email.from_address,
       email.from_name,
-      project?.sensitive_topics,
+      project.sensitive_topics,
     );
 
     // Create triage result with classification
-    await supabase.from('triage_results').insert({
+    const { error: insertError } = await supabase.from('triage_results').insert({
       email_id: emailId,
       project_id: projectId,
       category: classification.category,
@@ -78,10 +92,12 @@ export async function processEmail(emailId: string, projectId: string): Promise<
       classification_confidence: classification.confidence,
     });
 
+    if (insertError) throw new Error(`Failed to insert triage result: ${insertError.message}`);
+
     await supabase.from('emails').update({ status: 'classified' }).eq('id', emailId);
     await logStep(projectId, emailId, 'classify', 'completed', stepStart);
 
-    // Auto-discover contact
+    // Auto-discover contact (fire-and-forget)
     autoDiscoverContact(projectId, email.from_address, email.from_name, classification).catch(
       () => {},
     );
@@ -90,7 +106,10 @@ export async function processEmail(emailId: string, projectId: string): Promise<
     if (FILTERED_CATEGORIES.includes(classification.category)) {
       await supabase
         .from('emails')
-        .update({ status: 'filtered', processing_completed_at: new Date().toISOString() })
+        .update({
+          status: 'filtered',
+          processing_completed_at: new Date().toISOString(),
+        })
         .eq('id', emailId);
       await logStep(projectId, emailId, 'filter', 'completed', stepStart);
       return;
@@ -142,7 +161,7 @@ export async function processEmail(emailId: string, projectId: string): Promise<
     }
 
     // Update triage result with ranking
-    await supabase
+    const { error: updateError } = await supabase
       .from('triage_results')
       .update({
         impact_score: ranking.impact_score,
@@ -163,20 +182,24 @@ export async function processEmail(emailId: string, projectId: string): Promise<
         context_packet: context,
         updated_at: new Date().toISOString(),
       })
-      .eq('email_id', emailId);
+      .eq('email_id', emailId)
+      .eq('project_id', projectId);
 
-    await supabase.from('emails').update({ status: 'ranked' }).eq('id', emailId);
-    await logStep(projectId, emailId, 'rank', 'completed', stepStart);
+    if (updateError) throw new Error(`Failed to update triage result: ${updateError.message}`);
 
-    // Step 4: Publish
     await supabase
       .from('emails')
-      .update({ status: 'published', processing_completed_at: new Date().toISOString() })
+      .update({
+        status: 'published',
+        processing_completed_at: new Date().toISOString(),
+      })
       .eq('id', emailId);
 
-    // Step 5: Notifications
-    const threshold = project?.notification_threshold ?? 6.0;
-    if (ranking.composite_score >= threshold && project?.slack_channel_id) {
+    await logStep(projectId, emailId, 'rank', 'completed', stepStart);
+
+    // Notifications (fire-and-forget)
+    const threshold = project.notification_threshold ?? 6.0;
+    if (ranking.composite_score >= threshold && project.slack_channel_id) {
       const triageData = {
         composite_score: ranking.composite_score,
         summary: classification.summary,
@@ -184,12 +207,13 @@ export async function processEmail(emailId: string, projectId: string): Promise<
         flags: ranking.flags,
         category: classification.category,
       };
-      const blocks = buildTriageNotification(triageData, email);
-      postToChannel(project.slack_channel_id, blocks).catch(() => {});
+      postToChannel(project.slack_channel_id, buildTriageNotification(triageData, email)).catch(
+        () => {},
+      );
     }
 
-    // Step 6: Auto-assign
-    const rules = project?.auto_assign_rules ?? [];
+    // Auto-assign
+    const rules = project.auto_assign_rules ?? [];
     for (const rule of rules as {
       category?: string;
       min_score?: number;
@@ -203,22 +227,23 @@ export async function processEmail(emailId: string, projectId: string): Promise<
         await supabase
           .from('triage_results')
           .update({ assigned_to: rule.assign_to, assigned_at: new Date().toISOString() })
-          .eq('email_id', emailId);
+          .eq('email_id', emailId)
+          .eq('project_id', projectId);
 
         if (rule.slack_user_id) {
-          const blocks = buildTriageNotification(
-            {
-              ...{
+          sendDM(
+            rule.slack_user_id,
+            buildTriageNotification(
+              {
                 composite_score: ranking.composite_score,
                 summary: classification.summary,
                 recommended_action: ranking.recommended_action,
                 flags: ranking.flags,
                 category: classification.category,
               },
-            },
-            email,
-          );
-          sendDM(rule.slack_user_id, blocks).catch(() => {});
+              email,
+            ),
+          ).catch(() => {});
         }
         break;
       }
