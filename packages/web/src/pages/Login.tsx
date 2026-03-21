@@ -72,6 +72,12 @@ export function Login() {
             </form>
           )}
         </div>
+
+        <p className="mt-4 text-center text-xs text-surface-500">
+          <a href="/demo" className="text-pink-500 transition-colors hover:text-pink-400">
+            View demo with sample data
+          </a>
+        </p>
       </div>
     </div>
   );

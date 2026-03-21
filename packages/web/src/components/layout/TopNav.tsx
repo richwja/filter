@@ -12,21 +12,26 @@ interface TopNavProps {
   currentProject: Project | null;
   onSwitchProject: (id: string) => void;
   onSignOut: () => void;
+  basePath?: string;
 }
 
-const navItems = [
-  { to: '/filter', label: 'Filter' },
-  { to: '/relationships', label: 'Relationships' },
-  { to: '/company-context', label: 'Company Context' },
-  { to: '/analytics', label: 'Analytics' },
-  { to: '/setup', label: 'Setup' },
-];
+function buildNav(base: string) {
+  return [
+    { to: `${base}/filter`, label: 'Filter' },
+    { to: `${base}/relationships`, label: 'Relationships' },
+    { to: `${base}/company-context`, label: 'Company Context' },
+    { to: `${base}/analytics`, label: 'Analytics' },
+    { to: `${base}/setup`, label: 'Setup' },
+  ];
+}
 
-const adminItems = [
-  { to: '/admin/pipeline', label: 'Pipeline' },
-  { to: '/admin/prompts', label: 'Prompts' },
-  { to: '/admin/config', label: 'System Config' },
-];
+function buildAdminNav(base: string) {
+  return [
+    { to: `${base}/pipeline`, label: 'Pipeline' },
+    { to: `${base}/prompts`, label: 'Prompts' },
+    { to: `${base}/config`, label: 'System Config' },
+  ];
+}
 
 function getInitials(name: string): string {
   return name
@@ -43,8 +48,11 @@ export function TopNav({
   currentProject,
   onSwitchProject,
   onSignOut,
+  basePath = '',
 }: TopNavProps) {
   const isAdmin = user.role === 'admin';
+  const navItems = buildNav(basePath);
+  const adminItems = buildAdminNav(basePath === '' ? '/admin' : basePath);
   const allItems = isAdmin ? [...navItems, ...adminItems] : navItems;
 
   return (
