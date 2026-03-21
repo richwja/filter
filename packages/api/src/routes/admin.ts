@@ -20,7 +20,11 @@ router.get('/pipeline', async (req, res) => {
   if (status) query = query.eq('status', status);
 
   const { data, error } = await query;
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    if (error.code === '23505')
+      return res.status(409).json({ error: 'Version conflict — please retry' });
+    return res.status(400).json({ error: error.message });
+  }
   res.json({ logs: data ?? [] });
 });
 
@@ -78,7 +82,11 @@ router.put('/prompts/:projectId', async (req, res) => {
     .select()
     .single();
 
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    if (error.code === '23505')
+      return res.status(409).json({ error: 'Version conflict — please retry' });
+    return res.status(400).json({ error: error.message });
+  }
   res.json({ prompt: data });
 });
 

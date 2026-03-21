@@ -255,14 +255,15 @@ CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.users (id, email, org_id)
-  SELECT NEW.id, NEW.email, o.id
-  FROM organizations o
-  WHERE o.slug = 'milltown'
+  VALUES (
+    NEW.id,
+    NEW.email,
+    (SELECT id FROM organizations WHERE slug = 'milltown' LIMIT 1)
+  )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
+CREATE TRIGGER on_auth_user_created  AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();

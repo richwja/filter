@@ -12,7 +12,7 @@ import contactRoutes from './routes/contacts';
 import contentRoutes from './routes/content';
 import analyticsRoutes from './routes/analytics';
 import adminRoutes from './routes/admin';
-
+import { recoverStuckEmails } from './pipeline/processor';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -58,6 +58,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 app.listen(PORT, () => {
+  recoverStuckEmails().catch(() => {});
   console.log(`Filter API running on port ${PORT}`);
 });
 

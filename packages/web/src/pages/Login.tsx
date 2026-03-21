@@ -1,24 +1,28 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2, Mail } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 
 export function Login() {
-  const { user, signIn, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
-  if (authLoading) return null;
-  if (user) return <Navigate to="/filter" replace />;
+  // Redirect if already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate('/filter', { replace: true });
+    });
+  }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSending(true);
     setError('');
 
-    const { error: err } = await signIn(email);
+    const { error: err } = await supabase.auth.signInWithOtp({ email });
     setSending(false);
 
     if (err) setError(err.message);

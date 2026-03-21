@@ -259,3 +259,29 @@ export async function processEmail(emailId: string, projectId: string): Promise<
     throw err;
   }
 }
+
+export async function recoverStuckEmails(): Promise<number> {
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from('emails')
+    .update({
+      processing_started_at: null,
+      status: 'ingested',
+      error_message: 'Reset after stuck processing',
+    })
+    .in('status', ['ingested', 'classified', 'enriched'])
+    .lt('processing_started_at', fiveMinAgo)
+    .not('processing_started_at', 'is', null)
+    .select('id, project_id');
+
+  if (error || !data?.length) return 0;
+
+  console.log(`Recovered ${data.length} stuck emails, re-queuing`);
+  for (const email of data) {
+    processEmail(email.id, email.project_id).catch((err) =>
+      console.error(`Recovery pipeline error for ${email.id}:`, err.message),
+    );
+  }
+  return data.length;
+}
