@@ -5,22 +5,19 @@ import { requireAuth } from '../middleware/auth';
 const router = Router();
 router.use(requireAuth);
 
-async function isProjectMember(
-  userId: string,
-  projectId: string,
-  isAdmin: boolean,
-): Promise<boolean> {
-  if (isAdmin) return true;
-  const { data } = await supabase
-    .from('project_members')
-    .select('id')
-    .eq('project_id', projectId)
-    .eq('user_id', userId)
-    .maybeSingle();
-  return !!data;
-}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 router.get('/', async (req, res) => {
+  // Admins see all projects in their org
+  if (req.user!.role === 'admin') {
+    const { data } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('org_id', req.user!.org_id)
+      .order('created_at', { ascending: false });
+    return res.json({ projects: data ?? [] });
+  }
+
   const { data: memberships } = await supabase
     .from('project_members')
     .select('project_id')
@@ -65,8 +62,19 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  if (!(await isProjectMember(req.user!.id, req.params.id, req.user!.role === 'admin'))) {
-    return res.status(403).json({ error: 'Not a member of this project' });
+  if (!UUID_RE.test(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid project ID' });
+  }
+
+  // Check access
+  if (req.user!.role !== 'admin') {
+    const { data: membership } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', req.params.id)
+      .eq('user_id', req.user!.id)
+      .maybeSingle();
+    if (!membership) return res.status(403).json({ error: 'Not a member of this project' });
   }
 
   const { data } = await supabase.from('projects').select('*').eq('id', req.params.id).single();
@@ -76,8 +84,18 @@ router.get('/:id', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
-  if (!(await isProjectMember(req.user!.id, req.params.id, req.user!.role === 'admin'))) {
-    return res.status(403).json({ error: 'Not a member of this project' });
+  if (!UUID_RE.test(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid project ID' });
+  }
+
+  if (req.user!.role !== 'admin') {
+    const { data: membership } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', req.params.id)
+      .eq('user_id', req.user!.id)
+      .maybeSingle();
+    if (!membership) return res.status(403).json({ error: 'Not a member of this project' });
   }
 
   const allowed = [

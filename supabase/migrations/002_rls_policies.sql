@@ -13,7 +13,7 @@ ALTER TABLE prompt_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pipeline_logs ENABLE ROW LEVEL SECURITY;
 
--- Helper functions
+-- Helper functions (SECURITY DEFINER bypasses RLS)
 CREATE OR REPLACE FUNCTION is_project_member(p_project_id uuid)
 RETURNS boolean AS $$
   SELECT EXISTS (
@@ -29,23 +29,32 @@ RETURNS boolean AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- ORGANIZATIONS: users can see their own org, admins see all
-CREATE POLICY "org_own" ON organizations
-  FOR SELECT USING (
-    id IN (SELECT org_id FROM users WHERE id = auth.uid())
-  );
-CREATE POLICY "org_admin" ON organizations USING (is_admin());
+CREATE OR REPLACE FUNCTION get_own_role()
+RETURNS text AS $$
+  SELECT role FROM users WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- USERS: users can see own org members, admins see all, only admins can update role
+CREATE OR REPLACE FUNCTION get_own_org_id()
+RETURNS uuid AS $$
+  SELECT org_id FROM users WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- ORGANIZATIONS: users see own org, admins see all
+CREATE POLICY "org_own" ON organizations
+  FOR SELECT USING (id = get_own_org_id());
+CREATE POLICY "org_admin" ON organizations
+  FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+
+-- USERS: see own org, update self (cannot change own role), admins manage
 CREATE POLICY "users_read_own_org" ON users
-  FOR SELECT USING (
-    org_id IN (SELECT org_id FROM users u WHERE u.id = auth.uid())
-    OR is_admin()
-  );
+  FOR SELECT USING (org_id = get_own_org_id() OR is_admin());
 CREATE POLICY "users_update_self" ON users
   FOR UPDATE USING (id = auth.uid())
-  WITH CHECK (id = auth.uid() AND role = (SELECT role FROM users WHERE id = auth.uid()));
-CREATE POLICY "users_admin" ON users USING (is_admin());
+  WITH CHECK (id = auth.uid() AND role = get_own_role());
+CREATE POLICY "users_admin_read" ON users
+  FOR SELECT USING (is_admin());
+CREATE POLICY "users_admin_write" ON users
+  FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- PROJECT MEMBERS
 CREATE POLICY "members_read" ON project_members
@@ -55,18 +64,18 @@ CREATE POLICY "members_admin" ON project_members
 
 -- PROJECTS
 CREATE POLICY "projects_read" ON projects
-  FOR SELECT USING (
-    id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid())
-    OR is_admin()
-  );
+  FOR SELECT USING (is_project_member(id) OR is_admin());
 CREATE POLICY "projects_write" ON projects
-  FOR UPDATE USING (is_project_member(id) OR is_admin());
+  FOR UPDATE USING (is_project_member(id) OR is_admin())
+  WITH CHECK (is_project_member(id) OR is_admin());
 CREATE POLICY "projects_insert" ON projects
-  FOR INSERT WITH CHECK (is_admin() OR true);
-CREATE POLICY "projects_admin" ON projects
-  FOR DELETE USING (is_admin());
+  FOR INSERT WITH CHECK (
+    is_admin() OR org_id = get_own_org_id()
+  );
+CREATE POLICY "projects_delete" ON projects
+  FOR DELETE USING (is_admin() AND status = 'archived');
 
--- PROJECT-SCOPED TABLES: read + write for members, full access for admins
+-- PROJECT-SCOPED TABLES
 DO $$
 DECLARE
   tbl text;
@@ -76,21 +85,18 @@ BEGIN
     'press_releases', 'writing_samples', 'pipeline_logs'
   ])
   LOOP
-    -- Members can read
     EXECUTE format(
       'CREATE POLICY "member_select" ON %I FOR SELECT USING (is_project_member(project_id))',
       tbl
     );
-    -- Members can insert/update
     EXECUTE format(
-      'CREATE POLICY "member_write" ON %I FOR INSERT WITH CHECK (is_project_member(project_id))',
+      'CREATE POLICY "member_insert" ON %I FOR INSERT WITH CHECK (is_project_member(project_id))',
       tbl
     );
     EXECUTE format(
-      'CREATE POLICY "member_update" ON %I FOR UPDATE USING (is_project_member(project_id))',
+      'CREATE POLICY "member_update" ON %I FOR UPDATE USING (is_project_member(project_id)) WITH CHECK (is_project_member(project_id))',
       tbl
     );
-    -- Admins can do everything
     EXECUTE format(
       'CREATE POLICY "admin_all" ON %I FOR ALL USING (is_admin()) WITH CHECK (is_admin())',
       tbl
@@ -98,18 +104,19 @@ BEGIN
   END LOOP;
 END $$;
 
--- PROMPT VERSIONS: only admins can write
+-- PROMPT VERSIONS: only admins write
 CREATE POLICY "prompt_read" ON prompt_versions
   FOR SELECT USING (is_project_member(project_id) OR is_admin());
 CREATE POLICY "prompt_write" ON prompt_versions
   FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
--- SAVED VIEWS: users see own views within their projects
+-- SAVED VIEWS: users own their views
 CREATE POLICY "views_read" ON saved_views
   FOR SELECT USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "views_write" ON saved_views
+CREATE POLICY "views_insert" ON saved_views
   FOR INSERT WITH CHECK (user_id = auth.uid() AND is_project_member(project_id));
 CREATE POLICY "views_update" ON saved_views
-  FOR UPDATE USING (user_id = auth.uid());
+  FOR UPDATE USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid() AND is_project_member(project_id));
 CREATE POLICY "views_delete" ON saved_views
   FOR DELETE USING (user_id = auth.uid() OR is_admin());

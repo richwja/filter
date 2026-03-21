@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Copy, ExternalLink, Check, ShieldAlert } from 'lucide-react';
 
 interface DraftReplyEditorProps {
@@ -19,11 +19,17 @@ export function DraftReplyEditor({
   const [subject, setSubject] = useState(initialSubject);
   const [body, setBody] = useState(initialBody);
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => clearTimeout(timerRef.current);
+  }, []);
 
   function handleCopy() {
     navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 2000);
   }
 
   function handleOpenInGmail() {

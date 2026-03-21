@@ -18,31 +18,35 @@ export function CompanyContext() {
   >([]);
 
   useEffect(() => {
-    if (!currentProject) return;
+    if (!currentProject || !session) {
+      setBriefing('');
+      setPressReleases([]);
+      setSamples([]);
+      return;
+    }
 
-    fetch(`/api/projects/${currentProject.id}`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then((r) => r.json())
-      .then(({ project }) => setBriefing(project?.client_context || ''));
+    const headers = { Authorization: `Bearer ${session.access_token}` };
 
-    fetch(`/api/projects/${currentProject.id}/press-releases`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
+    fetch(`/api/projects/${currentProject.id}`, { headers })
       .then((r) => r.json())
-      .then(({ press_releases }) => setPressReleases(press_releases ?? []));
+      .then(({ project }) => setBriefing(project?.client_context || ''))
+      .catch(() => setBriefing(''));
 
-    fetch(`/api/projects/${currentProject.id}/writing-samples`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
+    fetch(`/api/projects/${currentProject.id}/content/press-releases`, { headers })
       .then((r) => r.json())
-      .then(({ writing_samples }) => setSamples(writing_samples ?? []));
+      .then(({ press_releases }) => setPressReleases(press_releases ?? []))
+      .catch(() => setPressReleases([]));
+
+    fetch(`/api/projects/${currentProject.id}/content/writing-samples`, { headers })
+      .then((r) => r.json())
+      .then(({ writing_samples }) => setSamples(writing_samples ?? []))
+      .catch(() => setSamples([]));
   }, [currentProject, session]);
 
   async function saveBriefing() {
     if (!currentProject) return;
     setSaving(true);
-    await fetch(`/api/projects/${currentProject.id}/client-context`, {
+    await fetch(`/api/projects/${currentProject.id}/content/client-context`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

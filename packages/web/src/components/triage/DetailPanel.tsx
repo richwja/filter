@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Mail, Building2, User, Star } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { ScoreBadge } from './ScoreBadge';
 import { FlagChips } from './FlagChips';
 import { DraftReplyEditor } from './DraftReplyEditor';
 import type { TriageRow } from '@/hooks/useTriageRealtime';
+import type { AppContext } from '@/lib/types';
 
 interface DetailPanelProps {
   row: TriageRow | null;
@@ -11,7 +13,36 @@ interface DetailPanelProps {
 }
 
 export function DetailPanel({ row, onClose }: DetailPanelProps) {
+  const { session } = useOutletContext<AppContext>();
   const [status, setStatus] = useState(row?.status || 'new');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Reset status when row changes
+  useEffect(() => {
+    if (row) setStatus(row.status);
+  }, [row?.id, row?.status]);
+
+  function handleStatusChange(newStatus: string) {
+    setStatus(newStatus);
+    if (!row) return;
+
+    // Debounce the save
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetch(`/api/projects/${row.project_id}/triage/${row.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      }).catch((err) => console.error('Failed to update status:', err));
+    }, 300);
+  }
+
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   if (!row) return null;
 
@@ -90,9 +121,7 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
                   ))}
                 </div>
               </div>
-
               <FlagChips flags={row.flags ?? []} />
-
               {row.reasoning && (
                 <p className="text-sm text-surface-700 leading-relaxed">{row.reasoning}</p>
               )}
@@ -132,7 +161,7 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
                 <label className="mb-1 block text-xs text-surface-500">Status</label>
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => handleStatusChange(e.target.value)}
                   className="w-full rounded-md border border-surface-300 bg-surface px-3 py-2 text-sm text-surface-800"
                 >
                   {['new', 'in_progress', 'replied', 'closed', 'no_action'].map((s) => (
@@ -140,12 +169,6 @@ export function DetailPanel({ row, onClose }: DetailPanelProps) {
                       {s.replace(/_/g, ' ')}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="mb-1 block text-xs text-surface-500">Assigned to</label>
-                <select className="w-full rounded-md border border-surface-300 bg-surface px-3 py-2 text-sm text-surface-800">
-                  <option value="">Unassigned</option>
                 </select>
               </div>
             </div>

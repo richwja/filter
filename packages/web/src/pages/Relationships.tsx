@@ -114,12 +114,18 @@ export function Relationships() {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   useEffect(() => {
-    if (!currentProject) return;
+    if (!currentProject || !session) {
+      setContacts([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     fetch(`/api/projects/${currentProject.id}/contacts`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then((r) => r.json())
       .then(({ contacts: c }) => setContacts(c ?? []))
+      .catch(() => setContacts([]))
       .finally(() => setLoading(false));
   }, [currentProject, session]);
 

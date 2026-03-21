@@ -42,7 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/projects/:projectId/triage', requireAuth, requireProjectAccess, triageRoutes);
 app.use('/api/projects/:projectId/contacts', requireAuth, requireProjectAccess, contactRoutes);
-app.use('/api/projects/:projectId', requireAuth, requireProjectAccess, contentRoutes);
+app.use('/api/projects/:projectId/content', requireAuth, requireProjectAccess, contentRoutes);
 app.use('/api/projects/:projectId/analytics', requireAuth, requireProjectAccess, analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 

@@ -93,12 +93,12 @@ router.get('/scores', async (req, res) => {
     .not('composite_score', 'is', null);
 
   const buckets = Array.from({ length: 10 }, (_, i) => ({
-    range: `${i}-${i + 1}`,
+    range: `${i + 1}-${i + 2}`,
     count: 0,
   }));
 
   for (const row of data ?? []) {
-    const idx = Math.max(0, Math.min(Math.floor(row.composite_score), 9));
+    const idx = Math.max(0, Math.min(Math.floor(row.composite_score) - 1, 9));
     buckets[idx].count++;
   }
 

@@ -39,7 +39,7 @@ function PromptSection({
         const active = filtered.find((p: PromptVersion) => p.is_active);
         if (active) setContent(active.content);
       });
-  }, [projectId, type]);
+  }, [projectId, type, token]);
 
   async function handleSave() {
     setSaving(true);
