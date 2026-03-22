@@ -30,24 +30,24 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold text-surface-950 tracking-heading">Filter</h1>
-          <p className="mt-2 text-sm text-surface-600">Press inbox triage, powered by Claude</p>
+          <h1 className="text-3xl font-semibold text-gray-900 tracking-heading">Filter</h1>
+          <p className="mt-2 text-sm text-gray-500">Press inbox triage, powered by Claude</p>
         </div>
 
-        <div className="rounded-xl border border-surface-300 bg-surface-50 p-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
           {sent ? (
             <div className="text-center">
-              <Mail className="mx-auto mb-3 h-8 w-8 text-pink-500" />
-              <p className="text-sm font-medium text-surface-950">Check your email</p>
-              <p className="mt-1 text-xs text-surface-600">We sent a magic link to {email}</p>
+              <Mail className="mx-auto mb-3 h-8 w-8 text-pink-600" />
+              <p className="text-sm font-medium text-gray-900">Check your email</p>
+              <p className="mt-1 text-xs text-gray-500">We sent a magic link to {email}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-surface-800">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Email address
                 </label>
                 <input
@@ -56,7 +56,7 @@ export function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="you@company.com"
-                  className="w-full rounded-md border border-surface-300 bg-surface px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 focus:border-pink-600 focus:outline-none"
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-pink-600 focus:outline-none"
                 />
               </div>
 
@@ -73,8 +73,8 @@ export function Login() {
           )}
         </div>
 
-        <p className="mt-4 text-center text-xs text-surface-500">
-          <a href="/demo" className="text-pink-500 transition-colors hover:text-pink-400">
+        <p className="mt-4 text-center text-xs text-gray-500">
+          <a href="/demo" className="text-pink-600 transition-colors hover:text-pink-700">
             View demo with sample data
           </a>
         </p>

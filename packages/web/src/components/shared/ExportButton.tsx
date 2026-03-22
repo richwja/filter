@@ -3,6 +3,8 @@ import { Download } from 'lucide-react';
 interface ExportButtonProps {
   data: Record<string, unknown>[];
   filename: string;
+  icon?: React.ReactNode;
+  label?: string;
 }
 
 function toCsv(data: Record<string, unknown>[]): string {
@@ -20,7 +22,7 @@ function toCsv(data: Record<string, unknown>[]): string {
   return [headers.join(','), ...rows].join('\n');
 }
 
-export function ExportButton({ data, filename }: ExportButtonProps) {
+export function ExportButton({ data, filename, icon, label }: ExportButtonProps) {
   function handleExport() {
     const csv = toCsv(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -36,10 +38,10 @@ export function ExportButton({ data, filename }: ExportButtonProps) {
     <button
       onClick={handleExport}
       disabled={!data.length}
-      className="inline-flex items-center gap-1.5 rounded-md border border-surface-300 bg-surface px-3 py-1.5 text-sm font-medium text-surface-800 transition-colors hover:bg-surface-100 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
     >
-      <Download className="h-4 w-4" />
-      Export to CSV
+      {icon || <Download className="h-4 w-4" />}
+      {label || 'Export to CSV'}
     </button>
   );
 }

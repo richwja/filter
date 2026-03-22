@@ -39,11 +39,11 @@ const columns = [
       const row = info.row.original;
       return (
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-surface-950">
+          <div className="truncate text-sm font-medium text-gray-900">
             {row.emails?.from_name || row.emails?.from_address}
           </div>
           {row.outlet_name && (
-            <div className="truncate text-xs text-surface-600">{row.outlet_name}</div>
+            <div className="truncate text-xs text-gray-500">{row.outlet_name}</div>
           )}
         </div>
       );
@@ -57,9 +57,9 @@ const columns = [
       const row = info.row.original;
       return (
         <div className="min-w-0">
-          <div className="truncate text-sm text-surface-900">{row.emails?.subject}</div>
+          <div className="truncate text-sm text-gray-900">{row.emails?.subject}</div>
           {row.recommended_action && (
-            <div className="truncate text-xs text-surface-500">
+            <div className="truncate text-xs text-gray-500">
               {row.recommended_action.replace(/_/g, ' ')}
             </div>
           )}
@@ -71,7 +71,7 @@ const columns = [
   col.accessor('category', {
     header: 'Category',
     cell: (info) => (
-      <span className="text-xs text-surface-600">{info.getValue()?.replace(/_/g, ' ')}</span>
+      <span className="text-xs text-gray-500">{info.getValue()?.replace(/_/g, ' ')}</span>
     ),
     size: 120,
   }),
@@ -87,12 +87,12 @@ const columns = [
       const s = info.getValue();
       const color =
         s === 'new'
-          ? 'text-pink-500'
+          ? 'text-pink-600'
           : s === 'in_progress'
-            ? 'text-blue-400'
+            ? 'text-blue-600'
             : s === 'replied'
-              ? 'text-green-400'
-              : 'text-surface-500';
+              ? 'text-green-600'
+              : 'text-gray-500';
       return <span className={cn('text-xs font-medium', color)}>{s?.replace(/_/g, ' ')}</span>;
     },
     size: 90,
@@ -100,7 +100,7 @@ const columns = [
   col.accessor((row) => row.emails?.received_at || row.created_at, {
     id: 'time',
     header: 'Time',
-    cell: (info) => <span className="text-xs text-surface-500">{timeAgo(info.getValue())}</span>,
+    cell: (info) => <span className="text-xs text-gray-500">{timeAgo(info.getValue())}</span>,
     size: 60,
   }),
 ];
@@ -130,19 +130,19 @@ export function TriageTable({ data, onRowClick }: TriageTableProps) {
         <ColumnToggle table={table} />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-surface-300">
+      <div className="overflow-x-auto rounded-xl border border-gray-200">
         <table className="w-full">
           <thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="border-b border-surface-300 bg-surface-100">
+              <tr key={hg.id} className="border-b border-gray-200 bg-gray-50">
                 {hg.headers.map((header) => (
                   <th
                     key={header.id}
                     onClick={header.column.getToggleSortingHandler()}
                     className={cn(
-                      'px-3 py-2.5 text-left text-xs font-medium text-surface-600',
+                      'px-3 py-2.5 text-left text-xs font-medium text-gray-500',
                       header.column.getCanSort() &&
-                        'cursor-pointer select-none hover:text-surface-800',
+                        'cursor-pointer select-none hover:text-gray-700',
                     )}
                     style={{ width: header.getSize() }}
                   >
@@ -164,8 +164,8 @@ export function TriageTable({ data, onRowClick }: TriageTableProps) {
                 key={row.id}
                 onClick={() => onRowClick(row.original)}
                 className={cn(
-                  'border-b border-surface-300/50 transition-colors cursor-pointer hover:bg-surface-100',
-                  row.original.is_new && 'border-l-2 border-l-pink-500 bg-pink-600/5',
+                  'border-b border-gray-100 transition-colors cursor-pointer hover:bg-gray-50',
+                  row.original.is_new && 'border-l-2 border-l-pink-500 bg-pink-50',
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -180,7 +180,7 @@ export function TriageTable({ data, onRowClick }: TriageTableProps) {
       </div>
 
       {table.getPageCount() > 1 && (
-        <div className="mt-3 flex items-center justify-between text-xs text-surface-600">
+        <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
           <span>
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </span>
@@ -188,14 +188,14 @@ export function TriageTable({ data, onRowClick }: TriageTableProps) {
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="rounded-md border border-surface-300 px-3 py-1 transition-colors hover:bg-surface-100 disabled:opacity-30"
+              className="rounded-md border border-gray-200 px-3 py-1 transition-colors hover:bg-gray-50 disabled:opacity-30"
             >
               Previous
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="rounded-md border border-surface-300 px-3 py-1 transition-colors hover:bg-surface-100 disabled:opacity-30"
+              className="rounded-md border border-gray-200 px-3 py-1 transition-colors hover:bg-gray-50 disabled:opacity-30"
             >
               Next
             </button>

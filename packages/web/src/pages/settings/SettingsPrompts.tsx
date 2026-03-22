@@ -46,7 +46,6 @@ function PromptSection({
     await fetch(`/api/admin/prompts/${projectId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-
       body: JSON.stringify({ prompt_type: type, content }),
     });
     setSaving(false);
@@ -54,29 +53,29 @@ function PromptSection({
   }
 
   return (
-    <div className="rounded-xl border border-surface-300 bg-surface-50">
+    <div className="rounded-xl border border-gray-200 bg-white">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-5 py-4 text-left"
       >
         {expanded ? (
-          <ChevronDown className="h-4 w-4 text-surface-500" />
+          <ChevronDown className="h-4 w-4 text-gray-400" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-surface-500" />
+          <ChevronRight className="h-4 w-4 text-gray-400" />
         )}
-        <span className="text-sm font-medium text-surface-950">{label}</span>
-        <span className="ml-auto text-xs text-surface-500">v{versions[0]?.version ?? 0}</span>
+        <span className="text-sm font-medium text-gray-900">{label}</span>
+        <span className="ml-auto text-xs text-gray-500">v{versions[0]?.version ?? 0}</span>
       </button>
 
       {expanded && (
-        <div className="border-t border-surface-300 p-5 space-y-3">
+        <div className="border-t border-gray-200 p-5 space-y-3">
           {editing ? (
             <>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={20}
-                className="w-full rounded-md border border-surface-300 bg-surface px-4 py-3 font-mono text-xs text-surface-800 leading-relaxed focus:border-pink-600 focus:outline-none resize-y"
+                className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 font-mono text-xs text-gray-700 leading-relaxed focus:border-pink-600 focus:outline-none resize-y"
               />
               <div className="flex gap-2">
                 <button
@@ -93,7 +92,7 @@ function PromptSection({
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="rounded-md border border-surface-300 px-3 py-1.5 text-sm font-medium text-surface-800 transition-colors hover:bg-surface-100"
+                  className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -101,12 +100,12 @@ function PromptSection({
             </>
           ) : (
             <>
-              <pre className="max-h-96 overflow-y-auto rounded-md bg-surface p-4 font-mono text-xs text-surface-700 leading-relaxed">
+              <pre className="max-h-96 overflow-y-auto rounded-md bg-gray-50 p-4 font-mono text-xs text-gray-700 leading-relaxed">
                 {content || '(No prompt set)'}
               </pre>
               <button
                 onClick={() => setEditing(true)}
-                className="rounded-md border border-surface-300 px-3 py-1.5 text-sm font-medium text-surface-800 transition-colors hover:bg-surface-100"
+                className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 Edit prompt
               </button>
@@ -114,17 +113,17 @@ function PromptSection({
           )}
 
           {versions.length > 1 && (
-            <div className="mt-4 border-t border-surface-300 pt-3">
-              <h4 className="mb-2 text-xs font-medium text-surface-500">Version history</h4>
+            <div className="mt-4 border-t border-gray-200 pt-3">
+              <h4 className="mb-2 text-xs font-medium text-gray-500">Version history</h4>
               <div className="space-y-1">
                 {versions.slice(0, 5).map((v) => (
                   <div key={v.id} className="flex items-center justify-between text-xs">
                     <span
-                      className={cn('text-surface-600', v.is_active && 'text-pink-500 font-medium')}
+                      className={cn('text-gray-500', v.is_active && 'text-pink-600 font-medium')}
                     >
                       v{v.version} {v.is_active && '(active)'}
                     </span>
-                    <span className="text-surface-500">
+                    <span className="text-gray-500">
                       {new Date(v.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -138,16 +137,14 @@ function PromptSection({
   );
 }
 
-export function Prompts() {
+export function SettingsPrompts() {
   const { session, currentProject } = useOutletContext<AppContext>();
 
-  if (!currentProject) return <p className="text-surface-600">Select a project first.</p>;
+  if (!currentProject || !session) return <p className="text-gray-500">Select a project first.</p>;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-xl font-semibold text-surface-950 tracking-heading">
-        Prompt Management
-      </h1>
+    <div className="space-y-6">
+      <h1 className="text-xl font-semibold text-gray-900 tracking-heading">Prompts</h1>
       <div className="space-y-4">
         <PromptSection
           type="classify"

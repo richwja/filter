@@ -62,22 +62,22 @@ return results?.length ? results : { ...DEFAULT };
 
 ## Stack Quick Reference
 
-| Layer             | Technology                              |
-| ----------------- | --------------------------------------- |
-| Frontend          | React 18 + Vite + TypeScript            |
-| Styling           | Tailwind CSS (dark theme, pink accents) |
-| Components        | shadcn/ui (Radix primitives)            |
-| Tables            | TanStack Table                          |
-| Charts            | Recharts                                |
-| Icons             | Lucide React                            |
-| Backend           | Express + TypeScript                    |
-| Database          | Supabase (PostgreSQL + Auth + Realtime) |
-| AI Classification | Anthropic Haiku 4.5                     |
-| AI Ranking        | Anthropic Sonnet 4.6                    |
-| Email Ingestion   | Mailgun inbound webhooks                |
-| Notifications     | Slack Block Kit                         |
-| Hosting           | Render (API service + static site)      |
-| Monorepo          | npm workspaces                          |
+| Layer             | Technology                               |
+| ----------------- | ---------------------------------------- |
+| Frontend          | React 18 + Vite + TypeScript             |
+| Styling           | Tailwind CSS (light theme, pink accents) |
+| Components        | shadcn/ui (Radix primitives)             |
+| Tables            | TanStack Table                           |
+| Charts            | Recharts                                 |
+| Icons             | Lucide React                             |
+| Backend           | Express + TypeScript                     |
+| Database          | Supabase (PostgreSQL + Auth + Realtime)  |
+| AI Classification | Anthropic Haiku 4.5                      |
+| AI Ranking        | Anthropic Sonnet 4.6                     |
+| Email Ingestion   | Mailgun inbound webhooks                 |
+| Notifications     | Slack Block Kit                          |
+| Hosting           | Render (API service + static site)       |
+| Monorepo          | npm workspaces                           |
 
 ## Local Development
 
@@ -102,11 +102,12 @@ These rules come from the Milltown Measure design language. Do not deviate.
 
 ### Colours
 
-- **Background:** `bg-surface` (#0f1117)
-- **Cards:** `bg-surface-50` (#1a1d27), `border-surface-300`
+- **Page background:** `bg-gray-100` (#f3f4f6)
+- **Cards:** `bg-white` with `border-gray-200`
+- **Nav/header:** `bg-white border-gray-200`
 - **Primary CTA:** `bg-pink-600` (#db2777), hover `bg-pink-700`
-- **Active state:** `text-pink-500`
-- **Text:** `text-surface-950` headings, `text-surface-800` body, `text-surface-600` muted
+- **Active state:** `text-pink-600`, active tab bg `bg-pink-50`
+- **Text:** `text-gray-900` headings, `text-gray-700` body, `text-gray-500` muted
 - **Sentiment:** teal (#0f766e), amethyst (#6d5bae), ruby (#9f1239)
 
 ### Typography
@@ -118,9 +119,9 @@ These rules come from the Milltown Measure design language. Do not deviate.
 
 ### Components
 
-- **Cards:** `rounded-xl` (never `rounded-lg`), `border border-surface-300`
+- **Cards:** `rounded-xl` (never `rounded-lg`), `border border-gray-200`
 - **Buttons:** `font-medium transition-colors`, consistent padding
-- **Inputs:** `bg-surface border-surface-300 focus:border-pink-600 focus:outline-none`
+- **Inputs:** `bg-white border-gray-300 focus:border-pink-600 focus:outline-none`
 - **Icons:** Lucide only. `h-4 w-4` (small), `h-5 w-5` (standard)
 
 ### Anti-Patterns — DO NOT USE
@@ -157,8 +158,8 @@ Organization (Milltown Partners)
 
 ### Roles
 
-- **User:** sees their projects. Filter, Relationships, Company Context, Analytics, Setup.
-- **Admin:** everything users see + Pipeline, Prompts, System Config.
+- **User:** sees their projects. Filter Inbox, Relationships, Analytics, Settings (General, Context, Team).
+- **Admin:** everything users see + Settings > Prompts.
 
 ## Prompt Engineering
 
@@ -195,8 +196,10 @@ Files: `packages/api/src/services/classifier.ts`, `packages/api/src/services/ran
 ### Web
 
 - `packages/web/src/App.tsx` — Router + route definitions
-- `packages/web/src/components/layout/AppShell.tsx` — Authenticated layout wrapper
+- `packages/web/src/components/layout/AppShell.tsx` — Authenticated layout wrapper + SetupWizard trigger
 - `packages/web/src/pages/Filter.tsx` — Main triage dashboard
+- `packages/web/src/pages/Settings.tsx` — Settings layout shell (sidebar + outlet)
+- `packages/web/src/pages/settings/` — SettingsGeneral, SettingsContext, SettingsTeam, SettingsPrompts
 - `packages/web/src/hooks/useTriageRealtime.ts` — Supabase Realtime subscription
 - `packages/web/tailwind.config.ts` — Theme (colours, fonts, spacing)
 

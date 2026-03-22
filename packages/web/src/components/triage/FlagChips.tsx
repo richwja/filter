@@ -5,16 +5,16 @@ interface FlagChipsProps {
 }
 
 const flagColors: Record<string, string> = {
-  'Tier 1': 'bg-pink-600/15 text-pink-400',
-  Deadline: 'bg-red-500/15 text-red-400',
-  VIP: 'bg-purple-500/15 text-purple-400',
-  Sensitive: 'bg-amber-500/15 text-amber-400',
-  'New Contact': 'bg-teal-500/15 text-teal-400',
-  'Follow-up': 'bg-blue-500/15 text-blue-400',
+  'Tier 1': 'bg-pink-100 text-pink-700',
+  Deadline: 'bg-red-100 text-red-700',
+  VIP: 'bg-purple-100 text-purple-700',
+  Sensitive: 'bg-amber-100 text-amber-700',
+  'New Contact': 'bg-teal-100 text-teal-700',
+  'Follow-up': 'bg-blue-100 text-blue-700',
 };
 
 function getFlagColor(flag: string): string {
-  return flagColors[flag] ?? 'bg-surface-300/40 text-surface-600';
+  return flagColors[flag] ?? 'bg-gray-200 text-gray-500';
 }
 
 export function FlagChips({ flags }: FlagChipsProps) {

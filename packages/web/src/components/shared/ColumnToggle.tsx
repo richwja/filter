@@ -11,7 +11,7 @@ export function ColumnToggle<T>({ table }: ColumnToggleProps<T>) {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button className="inline-flex items-center gap-1.5 rounded-md border border-surface-300 bg-surface px-3 py-1.5 text-sm font-medium text-surface-800 transition-colors hover:bg-surface-100">
+        <button className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
           <Columns3 className="h-4 w-4" />
           Columns
         </button>
@@ -21,7 +21,7 @@ export function ColumnToggle<T>({ table }: ColumnToggleProps<T>) {
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
-          className="z-50 min-w-[180px] rounded-xl border border-surface-300 bg-surface-50 p-1 shadow-lg"
+          className="z-50 min-w-[180px] rounded-xl border border-gray-200 bg-white p-1 shadow-lg"
         >
           {table.getAllLeafColumns().map((column) => {
             if (!column.getCanHide()) return null;
@@ -31,8 +31,8 @@ export function ColumnToggle<T>({ table }: ColumnToggleProps<T>) {
                 checked={column.getIsVisible()}
                 onCheckedChange={(val) => column.toggleVisibility(!!val)}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-surface-100',
-                  column.getIsVisible() ? 'text-surface-800' : 'text-surface-500',
+                  'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-gray-50',
+                  column.getIsVisible() ? 'text-gray-700' : 'text-gray-500',
                 )}
               >
                 <DropdownMenu.ItemIndicator>
@@ -40,7 +40,7 @@ export function ColumnToggle<T>({ table }: ColumnToggleProps<T>) {
                 </DropdownMenu.ItemIndicator>
                 <div
                   className={cn(
-                    'h-3 w-3 rounded-sm border border-surface-400',
+                    'h-3 w-3 rounded-sm border border-gray-300',
                     column.getIsVisible() && 'hidden',
                   )}
                 />

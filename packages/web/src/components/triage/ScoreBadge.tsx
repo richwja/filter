@@ -8,12 +8,12 @@ interface ScoreBadgeProps {
 export function ScoreBadge({ score, size = 'sm' }: ScoreBadgeProps) {
   const colorClass =
     score >= 8
-      ? 'bg-red-500/15 text-red-400'
+      ? 'bg-red-100 text-red-700'
       : score >= 6
-        ? 'bg-amber-500/15 text-amber-400'
+        ? 'bg-amber-100 text-amber-700'
         : score >= 4
-          ? 'bg-blue-500/15 text-blue-400'
-          : 'bg-surface-300/40 text-surface-600';
+          ? 'bg-blue-100 text-blue-700'
+          : 'bg-gray-100 text-gray-500';
 
   return (
     <span

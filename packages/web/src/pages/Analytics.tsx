@@ -58,7 +58,7 @@ export function Analytics() {
   if (loading) {
     return (
       <div className="flex items-center justify-center pt-32">
-        <Loader2 className="h-6 w-6 animate-spin text-surface-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
       </div>
     );
   }
@@ -66,7 +66,7 @@ export function Analytics() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-surface-950 tracking-heading">Analytics</h1>
+        <h1 className="text-xl font-semibold text-gray-900 tracking-heading">Analytics</h1>
         <div className="flex gap-1">
           {RANGES.map((r) => (
             <button
@@ -74,9 +74,7 @@ export function Analytics() {
               onClick={() => setRange(r)}
               className={cn(
                 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                range === r
-                  ? 'bg-pink-600/10 text-pink-500'
-                  : 'text-surface-600 hover:text-surface-800',
+                range === r ? 'bg-pink-50 text-pink-600' : 'text-gray-500 hover:text-gray-700',
               )}
             >
               {r}
@@ -86,17 +84,17 @@ export function Analytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
-          <h2 className="mb-4 text-sm font-medium text-surface-600">Sentiment trend</h2>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Sentiment trend</h2>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={sentiment}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2e3447" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7394' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7394' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1a1d27',
-                  border: '1px solid #2e3447',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -114,22 +112,22 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
-          <h2 className="mb-4 text-sm font-medium text-surface-600">Top topics</h2>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Top topics</h2>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={topics} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#2e3447" />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#6b7394' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#6b7280' }} />
               <YAxis
                 dataKey="topic"
                 type="category"
-                tick={{ fontSize: 11, fill: '#6b7394' }}
+                tick={{ fontSize: 11, fill: '#6b7280' }}
                 width={120}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1a1d27',
-                  border: '1px solid #2e3447',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -139,17 +137,17 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
-          <h2 className="mb-4 text-sm font-medium text-surface-600">Email volume</h2>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Email volume</h2>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={volume}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2e3447" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7394' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7394' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1a1d27',
-                  border: '1px solid #2e3447',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -179,17 +177,17 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-surface-300 bg-surface-50 p-5">
-          <h2 className="mb-4 text-sm font-medium text-surface-600">Score distribution</h2>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Score distribution</h2>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={scores}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2e3447" />
-              <XAxis dataKey="range" tick={{ fontSize: 11, fill: '#6b7394' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7394' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="range" tick={{ fontSize: 11, fill: '#6b7280' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1a1d27',
-                  border: '1px solid #2e3447',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: 8,
                   fontSize: 12,
                 }}

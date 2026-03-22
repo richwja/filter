@@ -13,11 +13,11 @@
   }
 
   * {
-    @apply border-surface-300;
+    @apply border-gray-200;
   }
 
   body {
-    @apply bg-surface text-surface-900 tracking-body;
+    @apply bg-gray-100 text-gray-900 tracking-body;
   }
 
   h1,

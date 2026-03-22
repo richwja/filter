@@ -35,6 +35,18 @@ export function DemoFilter() {
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
+  function handleNext() {
+    if (!selectedRow) return;
+    const idx = filtered.findIndex((r) => r.id === selectedRow.id);
+    if (idx < filtered.length - 1) setSelectedRow(filtered[idx + 1]);
+  }
+
+  function handlePrevious() {
+    if (!selectedRow) return;
+    const idx = filtered.findIndex((r) => r.id === selectedRow.id);
+    if (idx > 0) setSelectedRow(filtered[idx - 1]);
+  }
+
   const filtered = useMemo(() => {
     let rows = DEMO_TRIAGE as TriageRow[];
 
@@ -93,8 +105,8 @@ export function DemoFilter() {
                 className={cn(
                   'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   activeTab === tab.value
-                    ? 'bg-pink-600/10 text-pink-500'
-                    : 'text-surface-600 hover:text-surface-800',
+                    ? 'bg-pink-50 text-pink-600'
+                    : 'text-gray-500 hover:text-gray-700',
                 )}
               >
                 {tab.label}
@@ -108,7 +120,7 @@ export function DemoFilter() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border border-surface-300 bg-surface px-3 py-1.5 text-sm text-surface-800"
+            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
           >
             <option value="">All statuses</option>
             {['new', 'in_progress', 'replied', 'closed', 'no_action'].map((s) => (
@@ -120,7 +132,7 @@ export function DemoFilter() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-md border border-surface-300 bg-surface px-3 py-1.5 text-sm text-surface-800"
+            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
           >
             <option value="">All categories</option>
             {[
@@ -141,7 +153,12 @@ export function DemoFilter() {
 
         <TriageTable data={filtered} onRowClick={setSelectedRow} />
       </Tabs.Root>
-      <DetailPanel row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <DetailPanel
+        row={selectedRow}
+        onClose={() => setSelectedRow(null)}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+      />
     </div>
   );
 }
