@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Save, Plus, FileText, PenLine, Loader2 } from 'lucide-react';
+import { Plus, FileText, PenLine, Loader2 } from 'lucide-react';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import type { AppContext } from '@/lib/types';
 
@@ -80,8 +80,7 @@ export function SettingsContext() {
             disabled={saving}
             className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-pink-700 disabled:opacity-50"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save briefing
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
           </button>
         </div>
       </SettingsSection>

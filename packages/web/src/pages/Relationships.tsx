@@ -12,6 +12,7 @@ import { Loader2, Plus, Sheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { ColumnToggle } from '@/components/shared/ColumnToggle';
+import { FilterBar } from '@/components/shared/FilterBar';
 import type { AppContext } from '@/lib/types';
 
 interface Contact {
@@ -146,25 +147,29 @@ export function Relationships() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900 tracking-heading">Relationships</h1>
-        <div className="flex gap-2">
-          <ExportButton
-            data={contacts as unknown as Record<string, unknown>[]}
-            filename="contacts"
-          />
-          <ExportButton
-            data={contacts as unknown as Record<string, unknown>[]}
-            filename="contacts-sheets"
-            icon={<Sheet className="h-4 w-4" />}
-            label="Export to Google Sheets"
-          />
-          <ColumnToggle table={table} />
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700">
-            <Plus className="h-4 w-4" /> Add contact
-          </button>
-        </div>
-      </div>
+      <FilterBar
+        left={
+          <h1 className="text-xl font-semibold text-gray-900 tracking-heading">Relationships</h1>
+        }
+        right={
+          <>
+            <ExportButton
+              data={contacts as unknown as Record<string, unknown>[]}
+              filename="contacts"
+            />
+            <ExportButton
+              data={contacts as unknown as Record<string, unknown>[]}
+              filename="contacts-sheets"
+              icon={<Sheet className="h-4 w-4" />}
+              label="Export to Google Sheets"
+            />
+            <ColumnToggle table={table} />
+            <button className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700">
+              <Plus className="h-4 w-4" /> Add contact
+            </button>
+          </>
+        }
+      />
 
       <div className="overflow-x-auto rounded-xl border border-gray-200">
         <table className="w-full">

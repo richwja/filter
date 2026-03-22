@@ -6,13 +6,13 @@ import {
   flexRender,
   createColumnHelper,
   type SortingState,
+  type Table,
 } from '@tanstack/react-table';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScoreBadge } from './ScoreBadge';
 import { FlagChips } from './FlagChips';
-import { ColumnToggle } from '../shared/ColumnToggle';
 import type { TriageRow } from '@/hooks/useTriageRealtime';
 
 const col = createColumnHelper<TriageRow>();
@@ -28,27 +28,27 @@ function timeAgo(dateStr: string): string {
 
 const columns = [
   col.accessor('composite_score', {
-    header: 'Score',
+    header: 'Priority',
     cell: (info) => <ScoreBadge score={Math.round(info.getValue() ?? 0)} />,
     size: 70,
   }),
   col.accessor((row) => row.emails?.from_name || row.emails?.from_address || '', {
     id: 'from',
-    header: 'From',
+    header: 'Reporter',
     cell: (info) => {
       const row = info.row.original;
       return (
-        <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-gray-900">
-            {row.emails?.from_name || row.emails?.from_address}
-          </div>
-          {row.outlet_name && (
-            <div className="truncate text-xs text-gray-500">{row.outlet_name}</div>
-          )}
+        <div className="truncate text-sm font-medium text-gray-900">
+          {row.emails?.from_name || row.emails?.from_address}
         </div>
       );
     },
     size: 180,
+  }),
+  col.accessor('outlet_name', {
+    header: 'Publication',
+    cell: (info) => <span className="text-sm text-gray-700">{info.getValue() || '—'}</span>,
+    size: 140,
   }),
   col.accessor((row) => row.emails?.subject || '', {
     id: 'subject',
@@ -108,9 +108,10 @@ const columns = [
 interface TriageTableProps {
   data: TriageRow[];
   onRowClick: (row: TriageRow) => void;
+  onTableReady?: (table: Table<TriageRow>) => void;
 }
 
-export function TriageTable({ data, onRowClick }: TriageTableProps) {
+export function TriageTable({ data, onRowClick, onTableReady }: TriageTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'composite_score', desc: true }]);
 
   const table = useReactTable({
@@ -124,12 +125,19 @@ export function TriageTable({ data, onRowClick }: TriageTableProps) {
     initialState: { pagination: { pageSize: 50 } },
   });
 
+  const onTableReadyRef = useRef(onTableReady);
+  onTableReadyRef.current = onTableReady;
+  const [notified, setNotified] = useState(false);
+
+  useEffect(() => {
+    if (!notified) {
+      onTableReadyRef.current?.(table);
+      setNotified(true);
+    }
+  }, [table, notified]);
+
   return (
     <div>
-      <div className="mb-3 flex justify-end">
-        <ColumnToggle table={table} />
-      </div>
-
       <div className="overflow-x-auto rounded-xl border border-gray-200">
         <table className="w-full">
           <thead>

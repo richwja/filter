@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import * as Tabs from '@radix-ui/react-tabs';
+import type { Table } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
 import { TriageTable } from '@/components/triage/TriageTable';
 import { DetailPanel } from '@/components/triage/DetailPanel';
 import { ExportButton } from '@/components/shared/ExportButton';
+import { ColumnToggle } from '@/components/shared/ColumnToggle';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { DEMO_TRIAGE } from '@/lib/demo';
 import type { TriageRow } from '@/hooks/useTriageRealtime';
 import type { AppContext } from '@/lib/types';
@@ -28,12 +31,15 @@ const viewTabs: { value: ViewTab; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
+const visibleTabs: ViewTab[] = ['queue', 'my_inbox'];
+
 export function DemoFilter() {
   const { user, currentProject } = useOutletContext<AppContext>();
   const [selectedRow, setSelectedRow] = useState<TriageRow | null>(null);
-  const [activeTab, setActiveTab] = useState<ViewTab>('all');
+  const [activeTab, setActiveTab] = useState<ViewTab>('queue');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [triageTable, setTriageTable] = useState<Table<TriageRow> | null>(null);
 
   function handleNext() {
     if (!selectedRow) return;
@@ -96,62 +102,75 @@ export function DemoFilter() {
   return (
     <div>
       <Tabs.Root value={activeTab} onValueChange={(v) => setActiveTab(v as ViewTab)}>
-        <div className="mb-4 flex items-center justify-between">
-          <Tabs.List className="flex gap-1">
-            {viewTabs.map((tab) => (
-              <Tabs.Trigger
-                key={tab.value}
-                value={tab.value}
-                className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                  activeTab === tab.value
-                    ? 'bg-pink-50 text-pink-600'
-                    : 'text-gray-500 hover:text-gray-700',
-                )}
+        <FilterBar
+          left={
+            <Tabs.List className="flex gap-1">
+              {viewTabs
+                .filter((t) => visibleTabs.includes(t.value))
+                .map((tab) => (
+                  <Tabs.Trigger
+                    key={tab.value}
+                    value={tab.value}
+                    className={cn(
+                      'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                      activeTab === tab.value
+                        ? 'bg-pink-50 text-pink-600'
+                        : 'text-gray-500 hover:text-gray-700',
+                    )}
+                  >
+                    {tab.label}
+                  </Tabs.Trigger>
+                ))}
+            </Tabs.List>
+          }
+          middle={
+            <>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
               >
-                {tab.label}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
-          <ExportButton data={exportData} filename={`filter-${currentProject?.slug || 'export'}`} />
-        </div>
+                <option value="">All statuses</option>
+                {['new', 'in_progress', 'replied', 'closed', 'no_action'].map((s) => (
+                  <option key={s} value={s}>
+                    {s.replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
+              >
+                <option value="">All categories</option>
+                {[
+                  'media_inquiry',
+                  'interview_request',
+                  'press_release_pitch',
+                  'event_invitation',
+                  'partnership_inquiry',
+                  'pr_agency_pitch',
+                  'other',
+                ].map((c) => (
+                  <option key={c} value={c}>
+                    {c.replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </select>
+            </>
+          }
+          right={
+            <>
+              {triageTable && <ColumnToggle table={triageTable} />}
+              <ExportButton
+                data={exportData}
+                filename={`filter-${currentProject?.slug || 'export'}`}
+              />
+            </>
+          }
+        />
 
-        <div className="mb-4 flex gap-3">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
-          >
-            <option value="">All statuses</option>
-            {['new', 'in_progress', 'replied', 'closed', 'no_action'].map((s) => (
-              <option key={s} value={s}>
-                {s.replace(/_/g, ' ')}
-              </option>
-            ))}
-          </select>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
-          >
-            <option value="">All categories</option>
-            {[
-              'media_inquiry',
-              'interview_request',
-              'press_release_pitch',
-              'event_invitation',
-              'partnership_inquiry',
-              'pr_agency_pitch',
-              'other',
-            ].map((c) => (
-              <option key={c} value={c}>
-                {c.replace(/_/g, ' ')}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <TriageTable data={filtered} onRowClick={setSelectedRow} />
+        <TriageTable data={filtered} onRowClick={setSelectedRow} onTableReady={setTriageTable} />
       </Tabs.Root>
       <DetailPanel
         row={selectedRow}
