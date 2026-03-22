@@ -106,7 +106,7 @@ export function SetupWizard({ project, token, onActivated }: SetupWizardProps) {
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Joby Aviation"
+                    placeholder="e.g. Tesla"
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-pink-600 focus:outline-none"
                   />
                 </div>
@@ -117,7 +117,7 @@ export function SetupWizard({ project, token, onActivated }: SetupWizardProps) {
                   <input
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="joby@filter.milltownpartners.com"
+                    placeholder="tesla@filter.milltownpartners.com"
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-pink-600 focus:outline-none"
                   />
                   <p className="mt-1 text-xs text-gray-500">

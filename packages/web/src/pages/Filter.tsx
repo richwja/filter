@@ -11,8 +11,10 @@ import { StoriesView } from '@/components/triage/StoriesView';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { ColumnToggle } from '@/components/shared/ColumnToggle';
 import { FilterBar } from '@/components/shared/FilterBar';
-import { DEMO_TEAM, DEMO_STORIES } from '@/lib/demo';
+import { DEMO_TEAM, generateDemoData } from '@/lib/demo';
 import type { AppContext } from '@/lib/types';
+
+const DEMO_STORIES = generateDemoData().stories;
 
 type ViewTab =
   | 'queue'

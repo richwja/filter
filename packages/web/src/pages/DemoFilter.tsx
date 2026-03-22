@@ -10,9 +10,11 @@ import { StoriesView } from '@/components/triage/StoriesView';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { ColumnToggle } from '@/components/shared/ColumnToggle';
 import { FilterBar } from '@/components/shared/FilterBar';
-import { DEMO_TRIAGE, DEMO_TEAM, DEMO_STORIES } from '@/lib/demo';
+import { DEMO_TEAM, generateDemoData } from '@/lib/demo';
 import type { TriageRow } from '@/hooks/useTriageRealtime';
 import type { AppContext } from '@/lib/types';
+
+const GENERATED = generateDemoData();
 
 type ViewTab =
   | 'queue'
@@ -49,13 +51,13 @@ export function DemoFilter() {
   const [storyOwners, setStoryOwners] = useState<Record<string, string | null>>({});
 
   const allRows = useMemo(() => {
-    return (DEMO_TRIAGE as TriageRow[]).map((r) =>
+    return GENERATED.triage.map((r) =>
       assignments[r.id] !== undefined ? { ...r, assigned_to: assignments[r.id] } : r,
     );
   }, [assignments]);
 
   const stories = useMemo(() => {
-    return DEMO_STORIES.map((s) => {
+    return GENERATED.stories.map((s) => {
       if (storyOwners[s.id] === undefined) return s;
       const userId = storyOwners[s.id];
       const member = DEMO_TEAM.find((m) => m.id === userId);

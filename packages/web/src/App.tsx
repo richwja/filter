@@ -6,6 +6,7 @@ import { Filter } from '@/pages/Filter';
 import { DemoFilter } from '@/pages/DemoFilter';
 import { Relationships } from '@/pages/Relationships';
 import { Analytics } from '@/pages/Analytics';
+import { DemoAnalytics } from '@/pages/DemoAnalytics';
 import { Settings } from '@/pages/Settings';
 import { SettingsGeneral } from '@/pages/settings/SettingsGeneral';
 import { SettingsContext } from '@/pages/settings/SettingsContext';
@@ -31,7 +32,7 @@ export function App() {
           <Route index element={<Navigate to="/demo/filter" replace />} />
           <Route path="filter" element={<DemoFilter />} />
           <Route path="relationships" element={<Relationships />} />
-          <Route path="analytics" element={<Analytics />} />
+          <Route path="analytics" element={<DemoAnalytics />} />
           <Route path="settings" element={<Settings basePath="/demo" />}>
             <Route index element={<Navigate to="/demo/settings/general" replace />} />
             <Route path="general" element={<SettingsGeneral />} />
