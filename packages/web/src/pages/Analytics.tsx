@@ -24,6 +24,13 @@ const SENTIMENT_COLORS = {
 };
 const RANGES = ['7d', '30d', '90d'] as const;
 
+function formatDateTick(dateStr: string, range: string): string {
+  const d = new Date(dateStr);
+  if (range === '7d') return d.toLocaleDateString(undefined, { weekday: 'short' });
+  if (range === '30d') return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(undefined, { month: 'short' });
+}
+
 export function Analytics() {
   const { session, currentProject } = useOutletContext<AppContext>();
   const [range, setRange] = useState<string>('30d');
@@ -85,11 +92,16 @@ export function Analytics() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-medium text-gray-500">Sentiment trend</h2>
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Sentiment Trends</h2>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={sentiment}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(v) => formatDateTick(v, range)}
+                tick={{ fontSize: 11, fill: '#6b7280' }}
+                {...(range !== '7d' ? { angle: -45, textAnchor: 'end' } : {})}
+              />
               <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
               <Tooltip
                 contentStyle={{
@@ -113,7 +125,7 @@ export function Analytics() {
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-medium text-gray-500">Top topics</h2>
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Inbound Themes</h2>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={topics} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -138,11 +150,16 @@ export function Analytics() {
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-medium text-gray-500">Email volume</h2>
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Inbound Volume</h2>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={volume}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(v) => formatDateTick(v, range)}
+                tick={{ fontSize: 11, fill: '#6b7280' }}
+                {...(range !== '7d' ? { angle: -45, textAnchor: 'end' } : {})}
+              />
               <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
               <Tooltip
                 contentStyle={{
@@ -178,7 +195,7 @@ export function Analytics() {
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-medium text-gray-500">Score distribution</h2>
+          <h2 className="mb-4 text-sm font-medium text-gray-500">Priority Scores</h2>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={scores}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

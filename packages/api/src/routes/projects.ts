@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { supabase } from '../db/supabase';
 import { requireAuth } from '../middleware/auth';
+import { postToChannel } from '../services/slack';
 
 const router = Router();
 router.use(requireAuth);
@@ -129,6 +130,62 @@ router.patch('/:id', async (req, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
   res.json({ project: data });
+});
+
+router.post('/:id/slack/test', async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid project ID' });
+  }
+
+  if (req.user!.role !== 'admin') {
+    const { data: membership } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', req.params.id)
+      .eq('user_id', req.user!.id)
+      .maybeSingle();
+    if (!membership) return res.status(403).json({ error: 'Not a member of this project' });
+  }
+
+  if (!process.env.SLACK_BOT_TOKEN) {
+    return res.json({ ok: false, error: 'Slack bot token not configured' });
+  }
+
+  const channelId = req.body?.channel_id as string | undefined;
+
+  if (!channelId) {
+    const { data: project } = await supabase
+      .from('projects')
+      .select('slack_channel_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!project?.slack_channel_id) {
+      return res.json({ ok: false, error: 'No Slack channel configured for this project' });
+    }
+
+    const result = await postToChannel(project.slack_channel_id, [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: ':white_check_mark: Filter test message — Slack integration is working.',
+        },
+      },
+    ]);
+    return res.json({ ok: result.ok, error: result.error });
+  }
+
+  const result = await postToChannel(channelId, [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: ':white_check_mark: Filter test message — Slack integration is working.',
+      },
+    },
+  ]);
+  res.json({ ok: result.ok, error: result.error });
 });
 
 export default router;

@@ -43,12 +43,12 @@ const baseColumns = [
     cell: (info) => {
       const row = info.row.original;
       return (
-        <div className="truncate text-sm font-medium text-gray-900">
+        <div className="line-clamp-2 text-sm font-medium text-gray-900">
           {row.emails?.from_name || row.emails?.from_address}
         </div>
       );
     },
-    size: 180,
+    size: 150,
   }),
   col.accessor('outlet_name', {
     header: 'Publication',
@@ -57,7 +57,7 @@ const baseColumns = [
   }),
   col.accessor((row) => row.emails?.subject || '', {
     id: 'subject',
-    header: 'Subject',
+    header: 'Subject & Action',
     cell: (info) => {
       const row = info.row.original;
       return (
@@ -83,7 +83,7 @@ const baseColumns = [
   col.accessor('flags', {
     header: 'Flags',
     cell: (info) => <FlagChips flags={info.getValue() ?? []} />,
-    size: 180,
+    size: 220,
     enableSorting: false,
   }),
   col.accessor('status', {
@@ -115,7 +115,7 @@ function buildAssignColumn(
   onAssign?: (triageId: string, userId: string | null) => void,
 ) {
   return col.accessor('assigned_to', {
-    header: 'Assign',
+    header: 'Owner',
     cell: (info) => {
       const value = info.getValue();
       return (

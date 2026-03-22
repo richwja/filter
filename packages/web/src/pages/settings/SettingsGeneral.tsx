@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import type { AppContext } from '@/lib/types';
 
@@ -10,6 +10,7 @@ export function SettingsGeneral() {
   const [address, setAddress] = useState('');
   const [slackChannel, setSlackChannel] = useState('');
   const [saving, setSaving] = useState(false);
+  const [slackStatus, setSlackStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (!currentProject) return;
@@ -17,6 +18,25 @@ export function SettingsGeneral() {
     setAddress(currentProject.receiving_address || '');
     setSlackChannel(currentProject.slack_channel_id || '');
   }, [currentProject]);
+
+  async function testSlackConnection() {
+    if (!currentProject || !session || !slackChannel) return;
+    setSlackStatus('testing');
+    try {
+      const res = await fetch(`/api/projects/${currentProject.id}/slack/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ channel_id: slackChannel }),
+      });
+      const data = await res.json();
+      setSlackStatus(data.ok ? 'success' : 'error');
+    } catch {
+      setSlackStatus('error');
+    }
+  }
 
   async function handleSave() {
     if (!currentProject || !session) return;
@@ -68,16 +88,63 @@ export function SettingsGeneral() {
               Mailgun receives emails at this address and routes them to Filter.
             </p>
           </div>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Slack Notifications"
+        description="Send triage alerts to a Slack channel when high-priority emails arrive."
+      >
+        <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
               Slack channel ID
             </label>
             <input
               value={slackChannel}
-              onChange={(e) => setSlackChannel(e.target.value)}
+              onChange={(e) => {
+                setSlackChannel(e.target.value);
+                setSlackStatus('idle');
+              }}
               placeholder="C0123456789"
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-pink-600 focus:outline-none"
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Right-click the channel in Slack &rarr; View channel details &rarr; copy the Channel
+              ID from the bottom of the dialog.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={testSlackConnection}
+              disabled={!slackChannel || slackStatus === 'testing'}
+              className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+            >
+              {slackStatus === 'testing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              Send test message
+            </button>
+            {slackStatus === 'success' && (
+              <span className="flex items-center gap-1.5 text-sm text-gray-700">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+                Connected
+              </span>
+            )}
+            {slackStatus === 'error' && (
+              <span className="flex items-center gap-1.5 text-sm text-gray-700">
+                <span className="h-2 w-2 rounded-full bg-red-500" />
+                Connection failed
+              </span>
+            )}
+            {slackStatus === 'idle' && slackChannel && (
+              <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                <span className="h-2 w-2 rounded-full bg-gray-300" />
+                Not connected
+              </span>
+            )}
           </div>
         </div>
       </SettingsSection>

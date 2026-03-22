@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { AppContext } from '@/lib/types';
 
 interface PromptVersion {
@@ -31,6 +30,7 @@ function PromptSection({
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
+  const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/admin/prompts/${projectId}`, { headers: { Authorization: `Bearer ${token}` } })
@@ -69,7 +69,9 @@ function PromptSection({
           <span className="text-sm font-medium text-gray-900">{label}</span>
           {description && <span className="block text-xs text-gray-500 mt-0.5">{description}</span>}
         </span>
-        <span className="ml-auto text-xs text-gray-500">v{versions[0]?.version ?? 0}</span>
+        {versions.length > 0 && (
+          <span className="ml-auto text-xs text-gray-500">v{versions[0].version}</span>
+        )}
       </button>
 
       {expanded && (
@@ -112,20 +114,54 @@ function PromptSection({
             </>
           )}
 
-          {versions.length > 1 && (
+          {versions.length > 0 && (
             <div className="mt-4 border-t border-gray-200 pt-3">
               <h4 className="mb-2 text-xs font-medium text-gray-500">Version history</h4>
               <div className="space-y-1">
                 {versions.slice(0, 5).map((v) => (
-                  <div key={v.id} className="flex items-center justify-between text-xs">
-                    <span
-                      className={cn('text-gray-500', v.is_active && 'text-pink-600 font-medium')}
-                    >
-                      v{v.version} {v.is_active && '(active)'}
-                    </span>
-                    <span className="text-gray-500">
-                      {new Date(v.created_at).toLocaleDateString()}
-                    </span>
+                  <div key={v.id}>
+                    {v.is_active ? (
+                      <div className="flex w-full items-center justify-between text-xs py-1">
+                        <span className="text-pink-600 font-medium">v{v.version} (active)</span>
+                        <span className="text-gray-500">
+                          {new Date(v.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setExpandedVersion(expandedVersion === v.id ? null : v.id)}
+                        className="flex w-full items-center justify-between text-xs py-1"
+                      >
+                        <span className="flex items-center gap-1">
+                          {expandedVersion === v.id ? (
+                            <ChevronDown className="h-3 w-3 text-gray-400" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3 text-gray-400" />
+                          )}
+                          <span className="text-gray-500">v{v.version}</span>
+                        </span>
+                        <span className="text-gray-500">
+                          {new Date(v.created_at).toLocaleDateString()}
+                        </span>
+                      </button>
+                    )}
+                    {expandedVersion === v.id && !v.is_active && (
+                      <div className="ml-4 mt-1 mb-2">
+                        <pre className="max-h-48 overflow-y-auto rounded-md bg-gray-50 p-3 font-mono text-xs text-gray-700 leading-relaxed border border-gray-200">
+                          {v.content}
+                        </pre>
+                        <button
+                          onClick={() => {
+                            setContent(v.content);
+                            setEditing(true);
+                            setExpandedVersion(null);
+                          }}
+                          className="mt-2 rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                        >
+                          Restore this version
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

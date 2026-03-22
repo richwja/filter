@@ -9,6 +9,7 @@ export function SettingsContext() {
   const [briefing, setBriefing] = useState('');
   const [saving, setSaving] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [newsroomUrl, setNewsroomUrl] = useState('');
   const [projectConfig, setProjectConfig] = useState<Record<string, unknown>>({});
   const [pressReleases, setPressReleases] = useState<
     { id: string; title: string; topics: string[]; status: string; published_at: string }[]
@@ -23,6 +24,7 @@ export function SettingsContext() {
       setPressReleases([]);
       setSamples([]);
       setWebSearchEnabled(false);
+      setNewsroomUrl('');
       setProjectConfig({});
       return;
     }
@@ -36,6 +38,7 @@ export function SettingsContext() {
         const cfg = project?.config ?? {};
         setProjectConfig(cfg);
         setWebSearchEnabled(!!cfg.web_search_enabled);
+        setNewsroomUrl((cfg.newsroom_url as string) || '');
       })
       .catch(() => setBriefing(''));
 
@@ -50,10 +53,9 @@ export function SettingsContext() {
       .catch(() => setSamples([]));
   }, [currentProject, session]);
 
-  function toggleWebSearch(enabled: boolean) {
+  function patchConfig(updates: Record<string, unknown>) {
     if (!currentProject) return;
-    setWebSearchEnabled(enabled);
-    const newConfig = { ...projectConfig, web_search_enabled: enabled };
+    const newConfig = { ...projectConfig, ...updates };
     setProjectConfig(newConfig);
     fetch(`/api/projects/${currentProject.id}`, {
       method: 'PATCH',
@@ -62,7 +64,12 @@ export function SettingsContext() {
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ config: newConfig }),
-    }).catch((err) => console.error('Failed to update web search setting:', err));
+    }).catch((err) => console.error('Failed to update config:', err));
+  }
+
+  function toggleWebSearch(enabled: boolean) {
+    setWebSearchEnabled(enabled);
+    patchConfig({ web_search_enabled: enabled });
   }
 
   async function saveBriefing() {
@@ -106,6 +113,19 @@ export function SettingsContext() {
             Run agentic web search providing additional contextual information to the LLM
           </span>
         </label>
+        <div className="mt-4">
+          <input
+            value={newsroomUrl}
+            onChange={(e) => setNewsroomUrl(e.target.value)}
+            onBlur={() => patchConfig({ newsroom_url: newsroomUrl })}
+            placeholder="https://company.com/newsroom"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-pink-600 focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Add your client's media newsroom URL so the web search includes their latest published
+            content.
+          </p>
+        </div>
       </SettingsSection>
 
       <SettingsSection
@@ -115,7 +135,7 @@ export function SettingsContext() {
         <textarea
           value={briefing}
           onChange={(e) => setBriefing(e.target.value)}
-          rows={12}
+          rows={4}
           placeholder="Describe the client's business, current media strategy, focus areas, key messages, sensitive topics, risks and opportunities."
           className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 leading-relaxed focus:border-pink-600 focus:outline-none resize-y"
         />
@@ -131,18 +151,18 @@ export function SettingsContext() {
       </SettingsSection>
 
       <SettingsSection
-        title="Press Releases"
-        description="Recent announcements that help Filter understand your client's news cycle."
+        title="Media Materials"
+        description="Add news releases, blog posts, Q&As and content to help Filter understand your business."
       >
         <div className="space-y-3">
           <div className="flex justify-end">
             <button className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700">
-              <Plus className="h-4 w-4" /> Add press release
+              <Plus className="h-4 w-4" /> Add content
             </button>
           </div>
           {pressReleases.length === 0 ? (
             <div className="rounded-md border border-gray-200 bg-gray-50 p-8 text-center text-sm text-gray-500">
-              No press releases yet. Add your client's recent announcements.
+              No content uploaded. Add material when ready.
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">

@@ -8,7 +8,7 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { Loader2, Plus, Sheet } from 'lucide-react';
+import { Loader2, Plus, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { ColumnToggle } from '@/components/shared/ColumnToggle';
@@ -160,7 +160,7 @@ export function Relationships() {
             <ExportButton
               data={contacts as unknown as Record<string, unknown>[]}
               filename="contacts-sheets"
-              icon={<Sheet className="h-4 w-4" />}
+              icon={<Download className="h-4 w-4" />}
               label="Export to Google Sheets"
             />
             <ColumnToggle table={table} />

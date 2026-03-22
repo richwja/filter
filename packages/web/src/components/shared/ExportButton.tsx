@@ -41,7 +41,7 @@ export function ExportButton({ data, filename, icon, label }: ExportButtonProps)
       className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
     >
       {icon || <Download className="h-4 w-4" />}
-      {label || 'Export to CSV'}
+      {label || 'Export CSV'}
     </button>
   );
 }

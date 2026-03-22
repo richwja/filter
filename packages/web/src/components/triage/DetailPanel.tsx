@@ -224,7 +224,7 @@ export function DetailPanel({
               </div>
               {teamMembers && teamMembers.length > 0 && (
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs font-medium text-gray-700">Assign</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">Owner</label>
                   <select
                     value={row.assigned_to || ''}
                     onChange={(e) => handleAssign(e.target.value || null)}
