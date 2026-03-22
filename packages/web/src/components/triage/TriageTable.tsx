@@ -8,12 +8,17 @@ import {
   type SortingState,
   type Table,
 } from '@tanstack/react-table';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScoreBadge } from './ScoreBadge';
 import { FlagChips } from './FlagChips';
 import type { TriageRow } from '@/hooks/useTriageRealtime';
+
+interface TeamMember {
+  id: string;
+  name: string;
+}
 
 const col = createColumnHelper<TriageRow>();
 
@@ -26,7 +31,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-const columns = [
+const baseColumns = [
   col.accessor('composite_score', {
     header: 'Priority',
     cell: (info) => <ScoreBadge score={Math.round(info.getValue() ?? 0)} />,
@@ -105,14 +110,66 @@ const columns = [
   }),
 ];
 
+function buildAssignColumn(
+  teamMembers: TeamMember[],
+  onAssign?: (triageId: string, userId: string | null) => void,
+) {
+  return col.accessor('assigned_to', {
+    header: 'Assign',
+    cell: (info) => {
+      const value = info.getValue();
+      return (
+        <select
+          value={value || ''}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            e.stopPropagation();
+            onAssign?.(info.row.original.id, e.target.value || null);
+          }}
+          className="w-full rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-700"
+        >
+          <option value="">—</option>
+          {teamMembers.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+      );
+    },
+    size: 130,
+    enableSorting: false,
+  });
+}
+
 interface TriageTableProps {
   data: TriageRow[];
   onRowClick: (row: TriageRow) => void;
   onTableReady?: (table: Table<TriageRow>) => void;
+  teamMembers?: TeamMember[];
+  onAssign?: (triageId: string, userId: string | null) => void;
 }
 
-export function TriageTable({ data, onRowClick, onTableReady }: TriageTableProps) {
+export function TriageTable({
+  data,
+  onRowClick,
+  onTableReady,
+  teamMembers,
+  onAssign,
+}: TriageTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'composite_score', desc: true }]);
+
+  const columns = useMemo(
+    () =>
+      teamMembers?.length
+        ? [
+            ...baseColumns.slice(0, 7),
+            buildAssignColumn(teamMembers, onAssign),
+            ...baseColumns.slice(7),
+          ]
+        : baseColumns,
+    [teamMembers, onAssign],
+  );
 
   const table = useReactTable({
     data,

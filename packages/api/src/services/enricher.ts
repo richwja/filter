@@ -59,6 +59,10 @@ export async function enrichEmail(
     recentInteractions = (data as Record<string, unknown>[]) ?? [];
   }
 
+  // TODO: If project.config.web_search_enabled, run a web search prompt here:
+  // - Use project name, client_context summary, and "recent news" as search terms
+  // - Append results to context packet for the ranker
+
   return {
     sender_profile: contactResult.data as Record<string, unknown> | null,
     recent_interactions: recentInteractions,

@@ -48,9 +48,6 @@ export function TopNav({
       {/* Left: Logo */}
       <div className="flex items-center gap-2 mr-8">
         <span className="text-xl font-semibold text-gray-900 tracking-heading">Filter</span>
-        <span className="rounded-sm bg-pink-50 px-1.5 py-0.5 text-[10px] font-medium text-pink-600">
-          beta
-        </span>
       </div>
 
       {/* Center: Nav tabs */}

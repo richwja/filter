@@ -113,6 +113,9 @@ export async function classifyEmail(
   fromName: string | null,
   sensitiveTopics?: string[],
 ): Promise<ClassificationResult> {
+  // TODO: Inject project.config.categories into classification prompt
+  // to allow per-project category customisation
+
   const sensitiveContext = sensitiveTopics?.length
     ? `\n\nClient-flagged sensitive topics: ${sensitiveTopics.join(', ')}`
     : '';

@@ -9,6 +9,7 @@ export interface Project {
   receiving_address: string | null;
   slack_channel_id: string | null;
   created_at: string;
+  config?: Record<string, unknown>;
 }
 
 const STORAGE_KEY = 'filter_current_project';

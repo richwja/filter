@@ -12,6 +12,7 @@ export function SettingsSidebar({ isAdmin, basePath = '' }: SettingsSidebarProps
   const projectLinks = [
     { to: `${base}/general`, label: 'General' },
     { to: `${base}/context`, label: 'Context' },
+    { to: `${base}/categories`, label: 'Categories' },
     { to: `${base}/team`, label: 'Team' },
   ];
 

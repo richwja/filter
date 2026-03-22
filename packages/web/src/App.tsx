@@ -11,6 +11,7 @@ import { SettingsGeneral } from '@/pages/settings/SettingsGeneral';
 import { SettingsContext } from '@/pages/settings/SettingsContext';
 import { SettingsTeam } from '@/pages/settings/SettingsTeam';
 import { SettingsPrompts } from '@/pages/settings/SettingsPrompts';
+import { SettingsCategories } from '@/pages/settings/SettingsCategories';
 import type { AppContext } from '@/lib/types';
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export function App() {
             <Route index element={<Navigate to="/demo/settings/general" replace />} />
             <Route path="general" element={<SettingsGeneral />} />
             <Route path="context" element={<SettingsContext />} />
+            <Route path="categories" element={<SettingsCategories />} />
             <Route path="team" element={<SettingsTeam />} />
             <Route path="prompts" element={<SettingsPrompts />} />
           </Route>
@@ -50,6 +52,7 @@ export function App() {
             <Route index element={<Navigate to="/settings/general" replace />} />
             <Route path="general" element={<SettingsGeneral />} />
             <Route path="context" element={<SettingsContext />} />
+            <Route path="categories" element={<SettingsCategories />} />
             <Route path="team" element={<SettingsTeam />} />
             <Route
               path="prompts"

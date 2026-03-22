@@ -8,14 +8,28 @@ import { DraftReplyEditor } from './DraftReplyEditor';
 import type { TriageRow } from '@/hooks/useTriageRealtime';
 import type { AppContext } from '@/lib/types';
 
+interface TeamMember {
+  id: string;
+  name: string;
+}
+
 interface DetailPanelProps {
   row: TriageRow | null;
   onClose: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
+  teamMembers?: TeamMember[];
+  onAssign?: (triageId: string, userId: string | null) => void;
 }
 
-export function DetailPanel({ row, onClose, onNext, onPrevious }: DetailPanelProps) {
+export function DetailPanel({
+  row,
+  onClose,
+  onNext,
+  onPrevious,
+  teamMembers,
+  onAssign,
+}: DetailPanelProps) {
   const { session } = useOutletContext<AppContext>();
   const [status, setStatus] = useState(row?.status || 'new');
   const [expanded, setExpanded] = useState(false);
@@ -56,6 +70,11 @@ export function DetailPanel({ row, onClose, onNext, onPrevious }: DetailPanelPro
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  function handleAssign(userId: string | null) {
+    if (!row) return;
+    onAssign?.(row.id, userId);
+  }
 
   function handleStatusChange(newStatus: string) {
     setStatus(newStatus);
@@ -136,7 +155,7 @@ export function DetailPanel({ row, onClose, onNext, onPrevious }: DetailPanelPro
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-900">Email</h3>
+            <h3 className="text-sm font-medium text-gray-900">Summary</h3>
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
               <p className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
                 {row.summary || '(No body available)'}
@@ -152,7 +171,7 @@ export function DetailPanel({ row, onClose, onNext, onPrevious }: DetailPanelPro
                   score={row.composite_score ? Math.round(row.composite_score) : 0}
                   size="md"
                 />
-                <span className="text-sm font-medium text-gray-700">Composite score</span>
+                <span className="text-sm font-medium text-gray-700">Impact</span>
               </div>
               <FlagChips flags={row.flags ?? []} />
               {row.reasoning && (
@@ -203,6 +222,23 @@ export function DetailPanel({ row, onClose, onNext, onPrevious }: DetailPanelPro
                   ))}
                 </select>
               </div>
+              {teamMembers && teamMembers.length > 0 && (
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-medium text-gray-700">Assign</label>
+                  <select
+                    value={row.assigned_to || ''}
+                    onChange={(e) => handleAssign(e.target.value || null)}
+                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </section>
         </div>

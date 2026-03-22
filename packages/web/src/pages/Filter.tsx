@@ -1,20 +1,23 @@
 import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sheet } from 'lucide-react';
 import type { Table } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
 import { useTriageRealtime, type TriageRow } from '@/hooks/useTriageRealtime';
 import { TriageTable } from '@/components/triage/TriageTable';
 import { DetailPanel } from '@/components/triage/DetailPanel';
+import { StoriesView } from '@/components/triage/StoriesView';
 import { ExportButton } from '@/components/shared/ExportButton';
 import { ColumnToggle } from '@/components/shared/ColumnToggle';
 import { FilterBar } from '@/components/shared/FilterBar';
+import { DEMO_TEAM, DEMO_STORIES } from '@/lib/demo';
 import type { AppContext } from '@/lib/types';
 
 type ViewTab =
   | 'queue'
   | 'my_inbox'
+  | 'stories'
   | 'urgent'
   | 'high_risk'
   | 'needs_approval'
@@ -24,6 +27,7 @@ type ViewTab =
 const viewTabs: { value: ViewTab; label: string }[] = [
   { value: 'queue', label: 'Queue' },
   { value: 'my_inbox', label: 'My Inbox' },
+  { value: 'stories', label: 'Stories' },
   { value: 'urgent', label: 'Urgent' },
   { value: 'high_risk', label: 'High Risk' },
   { value: 'needs_approval', label: 'Needs Approval' },
@@ -31,16 +35,28 @@ const viewTabs: { value: ViewTab; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
-const visibleTabs: ViewTab[] = ['queue', 'my_inbox'];
+const visibleTabs: ViewTab[] = ['queue', 'my_inbox', 'stories'];
 
 export function Filter() {
-  const { user, currentProject } = useOutletContext<AppContext>();
+  const { user, currentProject, session } = useOutletContext<AppContext>();
   const { results, loading } = useTriageRealtime(currentProject?.id);
   const [selectedRow, setSelectedRow] = useState<TriageRow | null>(null);
   const [activeTab, setActiveTab] = useState<ViewTab>('queue');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [assignFilter, setAssignFilter] = useState('');
   const [triageTable, setTriageTable] = useState<Table<TriageRow> | null>(null);
+
+  function handleAssign(triageId: string, userId: string | null) {
+    fetch(`/api/projects/${currentProject?.id}/triage/${triageId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ assigned_to: userId }),
+    }).catch((err) => console.error('Failed to update assignment:', err));
+  }
 
   function handleNext() {
     if (!selectedRow) return;
@@ -80,9 +96,11 @@ export function Filter() {
 
     if (statusFilter) rows = rows.filter((r) => r.status === statusFilter);
     if (categoryFilter) rows = rows.filter((r) => r.category === categoryFilter);
+    if (assignFilter === 'unassigned') rows = rows.filter((r) => !r.assigned_to);
+    else if (assignFilter) rows = rows.filter((r) => r.assigned_to === assignFilter);
 
     return rows;
-  }, [results, activeTab, statusFilter, categoryFilter, user?.id]);
+  }, [results, activeTab, statusFilter, categoryFilter, assignFilter, user?.id]);
 
   const exportData = useMemo(
     () =>
@@ -132,7 +150,7 @@ export function Filter() {
                 ))}
             </Tabs.List>
           }
-          middle={
+          right={
             <>
               <select
                 value={statusFilter}
@@ -166,26 +184,59 @@ export function Filter() {
                   </option>
                 ))}
               </select>
-            </>
-          }
-          right={
-            <>
+              <select
+                value={assignFilter}
+                onChange={(e) => setAssignFilter(e.target.value)}
+                className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
+              >
+                <option value="">All assignees</option>
+                <option value="unassigned">Unassigned</option>
+                {DEMO_TEAM.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
               {triageTable && <ColumnToggle table={triageTable} />}
               <ExportButton
                 data={exportData}
                 filename={`filter-${currentProject?.slug || 'export'}`}
               />
+              <ExportButton
+                data={exportData}
+                filename={`filter-${currentProject?.slug || 'export'}-sheets`}
+                icon={<Sheet className="h-4 w-4" />}
+                label="Google Sheets"
+              />
             </>
           }
         />
 
-        <TriageTable data={filtered} onRowClick={setSelectedRow} onTableReady={setTriageTable} />
+        {activeTab === 'stories' ? (
+          <StoriesView
+            stories={DEMO_STORIES}
+            allRows={results}
+            teamMembers={DEMO_TEAM}
+            onRowClick={setSelectedRow}
+            onAssignOwner={handleAssign}
+          />
+        ) : (
+          <TriageTable
+            data={filtered}
+            onRowClick={setSelectedRow}
+            onTableReady={setTriageTable}
+            teamMembers={DEMO_TEAM}
+            onAssign={handleAssign}
+          />
+        )}
       </Tabs.Root>
       <DetailPanel
         row={selectedRow}
         onClose={() => setSelectedRow(null)}
         onNext={handleNext}
         onPrevious={handlePrevious}
+        teamMembers={DEMO_TEAM}
+        onAssign={handleAssign}
       />
     </div>
   );

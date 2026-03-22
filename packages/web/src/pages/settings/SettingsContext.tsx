@@ -8,6 +8,8 @@ export function SettingsContext() {
   const { session, currentProject } = useOutletContext<AppContext>();
   const [briefing, setBriefing] = useState('');
   const [saving, setSaving] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [projectConfig, setProjectConfig] = useState<Record<string, unknown>>({});
   const [pressReleases, setPressReleases] = useState<
     { id: string; title: string; topics: string[]; status: string; published_at: string }[]
   >([]);
@@ -20,6 +22,8 @@ export function SettingsContext() {
       setBriefing('');
       setPressReleases([]);
       setSamples([]);
+      setWebSearchEnabled(false);
+      setProjectConfig({});
       return;
     }
 
@@ -27,7 +31,12 @@ export function SettingsContext() {
 
     fetch(`/api/projects/${currentProject.id}`, { headers })
       .then((r) => r.json())
-      .then(({ project }) => setBriefing(project?.client_context || ''))
+      .then(({ project }) => {
+        setBriefing(project?.client_context || '');
+        const cfg = project?.config ?? {};
+        setProjectConfig(cfg);
+        setWebSearchEnabled(!!cfg.web_search_enabled);
+      })
       .catch(() => setBriefing(''));
 
     fetch(`/api/projects/${currentProject.id}/content/press-releases`, { headers })
@@ -40,6 +49,21 @@ export function SettingsContext() {
       .then(({ writing_samples }) => setSamples(writing_samples ?? []))
       .catch(() => setSamples([]));
   }, [currentProject, session]);
+
+  function toggleWebSearch(enabled: boolean) {
+    if (!currentProject) return;
+    setWebSearchEnabled(enabled);
+    const newConfig = { ...projectConfig, web_search_enabled: enabled };
+    setProjectConfig(newConfig);
+    fetch(`/api/projects/${currentProject.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ config: newConfig }),
+    }).catch((err) => console.error('Failed to update web search setting:', err));
+  }
 
   async function saveBriefing() {
     if (!currentProject) return;
@@ -62,6 +86,27 @@ export function SettingsContext() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-900 tracking-heading">Context</h1>
+
+      <SettingsSection
+        title="Web Search"
+        description="Provide the LLM with additional context from the web."
+      >
+        <label className="flex items-start gap-3 cursor-pointer">
+          <button
+            role="switch"
+            aria-checked={webSearchEnabled}
+            onClick={() => toggleWebSearch(!webSearchEnabled)}
+            className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${webSearchEnabled ? 'bg-pink-600' : 'bg-gray-200'}`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${webSearchEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'}`}
+            />
+          </button>
+          <span className="text-sm text-gray-700">
+            Run agentic web search providing additional contextual information to the LLM
+          </span>
+        </label>
+      </SettingsSection>
 
       <SettingsSection
         title="Client Briefing"

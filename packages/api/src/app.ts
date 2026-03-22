@@ -12,6 +12,7 @@ import contactRoutes from './routes/contacts';
 import contentRoutes from './routes/content';
 import analyticsRoutes from './routes/analytics';
 import adminRoutes from './routes/admin';
+import storiesRoutes from './routes/stories';
 import { recoverStuckEmails } from './pipeline/processor';
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,6 +45,7 @@ app.use('/api/projects/:projectId/triage', requireAuth, requireProjectAccess, tr
 app.use('/api/projects/:projectId/contacts', requireAuth, requireProjectAccess, contactRoutes);
 app.use('/api/projects/:projectId/content', requireAuth, requireProjectAccess, contentRoutes);
 app.use('/api/projects/:projectId/analytics', requireAuth, requireProjectAccess, analyticsRoutes);
+app.use('/api/projects/:projectId/stories', requireAuth, requireProjectAccess, storiesRoutes);
 app.use('/api/admin', adminRoutes);
 
 // 404
