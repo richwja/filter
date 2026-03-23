@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 
@@ -15,8 +15,13 @@ export function useAuth() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchedTokenRef = useRef<string | null>(null);
 
   const fetchProfile = useCallback(async (sess: Session) => {
+    // Deduplicate: skip if we already fetched for this exact token
+    if (fetchedTokenRef.current === sess.access_token) return;
+    fetchedTokenRef.current = sess.access_token;
+
     const res = await fetch('/api/auth/me', {
       headers: { Authorization: `Bearer ${sess.access_token}` },
     });
@@ -53,6 +58,7 @@ export function useAuth() {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    fetchedTokenRef.current = null;
   }, []);
 
   return { user, session, loading, signIn, signOut };

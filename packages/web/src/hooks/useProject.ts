@@ -53,5 +53,21 @@ export function useProject(session?: Session | null) {
     [projects],
   );
 
-  return { projects, currentProject, switchProject, loading };
+  const createProject = useCallback(async (name: string, token: string) => {
+    const res = await fetch('/api/projects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) return;
+    const { project } = await res.json();
+    setProjects((prev) => [project, ...prev]);
+    setCurrentProject(project);
+    localStorage.setItem(STORAGE_KEY, project.id);
+  }, []);
+
+  return { projects, currentProject, switchProject, createProject, loading };
 }

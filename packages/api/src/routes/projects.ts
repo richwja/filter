@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { supabase } from '../db/supabase';
 import { requireAuth } from '../middleware/auth';
-import { postToChannel } from '../services/slack';
+import { postToChannel, listSlackChannels } from '../services/slack';
 
 const router = Router();
 router.use(requireAuth);
@@ -130,6 +130,25 @@ router.patch('/:id', async (req, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
   res.json({ project: data });
+});
+
+router.get('/:id/slack/channels', async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid project ID' });
+  }
+
+  if (req.user!.role !== 'admin') {
+    const { data: membership } = await supabase
+      .from('project_members')
+      .select('id')
+      .eq('project_id', req.params.id)
+      .eq('user_id', req.user!.id)
+      .maybeSingle();
+    if (!membership) return res.status(403).json({ error: 'Not a member of this project' });
+  }
+
+  const channels = await listSlackChannels();
+  res.json({ channels });
 });
 
 router.post('/:id/slack/test', async (req, res) => {

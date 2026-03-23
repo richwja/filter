@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Plus, FileText, PenLine, Loader2 } from 'lucide-react';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { AddContentModal, AddSampleModal } from './ContentModals';
 import type { AppContext } from '@/lib/types';
 
 export function SettingsContext() {
@@ -17,6 +18,28 @@ export function SettingsContext() {
   const [samples, setSamples] = useState<
     { id: string; label: string; sample_type: string; tone: string }[]
   >([]);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [showSampleModal, setShowSampleModal] = useState(false);
+
+  const fetchPressReleases = useCallback(() => {
+    if (!currentProject || !session) return;
+    fetch(`/api/projects/${currentProject.id}/content/press-releases`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then((r) => r.json())
+      .then(({ press_releases }) => setPressReleases(press_releases ?? []))
+      .catch(() => setPressReleases([]));
+  }, [currentProject, session]);
+
+  const fetchSamples = useCallback(() => {
+    if (!currentProject || !session) return;
+    fetch(`/api/projects/${currentProject.id}/content/writing-samples`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then((r) => r.json())
+      .then(({ writing_samples }) => setSamples(writing_samples ?? []))
+      .catch(() => setSamples([]));
+  }, [currentProject, session]);
 
   useEffect(() => {
     if (!currentProject || !session) {
@@ -29,9 +52,9 @@ export function SettingsContext() {
       return;
     }
 
-    const headers = { Authorization: `Bearer ${session.access_token}` };
-
-    fetch(`/api/projects/${currentProject.id}`, { headers })
+    fetch(`/api/projects/${currentProject.id}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then((r) => r.json())
       .then(({ project }) => {
         setBriefing(project?.client_context || '');
@@ -42,16 +65,9 @@ export function SettingsContext() {
       })
       .catch(() => setBriefing(''));
 
-    fetch(`/api/projects/${currentProject.id}/content/press-releases`, { headers })
-      .then((r) => r.json())
-      .then(({ press_releases }) => setPressReleases(press_releases ?? []))
-      .catch(() => setPressReleases([]));
-
-    fetch(`/api/projects/${currentProject.id}/content/writing-samples`, { headers })
-      .then((r) => r.json())
-      .then(({ writing_samples }) => setSamples(writing_samples ?? []))
-      .catch(() => setSamples([]));
-  }, [currentProject, session]);
+    fetchPressReleases();
+    fetchSamples();
+  }, [currentProject, session, fetchPressReleases, fetchSamples]);
 
   function patchConfig(updates: Record<string, unknown>) {
     if (!currentProject) return;
@@ -156,7 +172,10 @@ export function SettingsContext() {
       >
         <div className="space-y-3">
           <div className="flex justify-end">
-            <button className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700">
+            <button
+              onClick={() => setShowContentModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700"
+            >
               <Plus className="h-4 w-4" /> Add content
             </button>
           </div>
@@ -203,7 +222,10 @@ export function SettingsContext() {
       >
         <div className="space-y-3">
           <div className="flex justify-end">
-            <button className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700">
+            <button
+              onClick={() => setShowSampleModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pink-700"
+            >
               <Plus className="h-4 w-4" /> Add sample
             </button>
           </div>
@@ -229,6 +251,21 @@ export function SettingsContext() {
           )}
         </div>
       </SettingsSection>
+
+      <AddContentModal
+        open={showContentModal}
+        onClose={() => setShowContentModal(false)}
+        projectId={currentProject.id}
+        token={session.access_token}
+        onSuccess={fetchPressReleases}
+      />
+      <AddSampleModal
+        open={showSampleModal}
+        onClose={() => setShowSampleModal(false)}
+        projectId={currentProject.id}
+        token={session.access_token}
+        onSuccess={fetchSamples}
+      />
     </div>
   );
 }

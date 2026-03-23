@@ -44,6 +44,49 @@ export async function sendDM(slackUserId: string, blocks: SlackBlock[]) {
   return slackApi('chat.postMessage', { channel: conv.channel.id, blocks });
 }
 
+export async function listSlackChannels(): Promise<{ id: string; name: string }[]> {
+  if (!SLACK_TOKEN) return [];
+
+  try {
+    const channels: { id: string; name: string }[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const params: Record<string, unknown> = {
+        types: 'public_channel,private_channel',
+        exclude_archived: true,
+        limit: 200,
+      };
+      if (cursor) params.cursor = cursor;
+
+      const res = await fetch('https://slack.com/api/conversations.list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SLACK_TOKEN}`,
+        },
+        body: JSON.stringify(params),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        channels?: { id: string; name: string }[];
+        response_metadata?: { next_cursor?: string };
+      };
+
+      if (!data.ok || !data.channels) break;
+      for (const ch of data.channels) {
+        channels.push({ id: ch.id, name: ch.name });
+      }
+      cursor = data.response_metadata?.next_cursor || undefined;
+    } while (cursor);
+
+    return channels.sort((a, b) => a.name.localeCompare(b.name));
+  } catch (err) {
+    console.error('Failed to list Slack channels:', err);
+    return [];
+  }
+}
+
 export function buildTriageNotification(
   triage: {
     composite_score: number;
